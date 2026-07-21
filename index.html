@@ -63,6 +63,8 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .marca .cruz:before{transform:rotate(45deg);}
 .marca .cruz:after{transform:rotate(-45deg);}
 .marca .txt{line-height:1.05;}
+.logo-icon{width:44px;height:44px;object-fit:contain;flex:none;}
+.logo-inicio{width:130px;height:130px;object-fit:contain;margin:0 auto;display:block;}
 .marca .txt .l1{font-size:15px;}
 .marca .txt .l2{font-size:11px;color:var(--muted);font-family:'Work Sans';text-transform:none;letter-spacing:0;}
 .estado-conexion{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);}
@@ -196,19 +198,13 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 <!-- ==================== PANTALLA: INICIO ==================== -->
 <div id="pantalla-inicio" class="pantalla">
   <div class="inicio-caja">
-    <div class="marca" style="justify-content:center;">
-      <div class="cruz"></div>
-      <div class="txt" style="text-align:left;">
-        <div class="l1 display">Sushi'Ngada</div>
-        <div class="l2">Hambre</div>
-      </div>
-    </div>
+    <img class="logo-inicio" src="logo.png" alt="Sushi'Ngada Hambre">
     <h1>Comandas</h1>
     <div class="inicio-sub">¿Qué dispositivo es este?</div>
     <div class="roles">
       <div class="rol-card">
         <div class="icono">🧾</div>
-        <h3>Soy Mesero</h3>
+        <h3>Soy Receptor de pedidos</h3>
         <p>Toma el pedido: rollos, bolas, combos, empanizado, salsas y notas. Envía todo directo a cocina.</p>
         <button class="btn btn-azul btn-w" onclick="elegirRol('mesero')">Tomar pedidos</button>
       </div>
@@ -241,7 +237,7 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
       <button class="btn btn-fantasma btn-w" style="margin-top:10px;" onclick="volverDeParero()">← Volver</button>
     </div>
     <div id="pareo-cocina" class="oculto">
-      <h2>Empareja con el mesero</h2>
+      <h2>Empareja con el receptor de pedidos</h2>
       <p>Apunta la cámara al código QR que muestra el dispositivo de toma de pedidos.</p>
       <video id="video-scanner" autoplay playsinline muted></video>
       <canvas id="canvas-scanner" class="oculto"></canvas>
@@ -264,8 +260,8 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
   <div class="contenedor">
     <div class="topbar">
       <div class="marca">
-        <div class="cruz"></div>
-        <div class="txt"><div class="l1 display" style="font-size:15px;">Sushi'Ngada</div><div class="l2">Mesero</div></div>
+        <img class="logo-icon" src="logo.png" alt="Sushi'Ngada Hambre">
+        <div class="txt"><div class="l2">Receptor de pedidos</div></div>
       </div>
       <div style="display:flex;align-items:center;gap:14px;">
         <span class="sala-code" id="mesero-sala-code">sala ------</span>
@@ -306,8 +302,8 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
   <div class="contenedor">
     <div class="topbar">
       <div class="marca">
-        <div class="cruz"></div>
-        <div class="txt"><div class="l1 display" style="font-size:15px;">Sushi'Ngada</div><div class="l2">Cocina</div></div>
+        <img class="logo-icon" src="logo.png" alt="Sushi'Ngada Hambre">
+        <div class="txt"><div class="l2">Cocina</div></div>
       </div>
       <div style="display:flex;align-items:center;gap:14px;">
         <span class="sala-code" id="cocina-sala-code">sala ------</span>
@@ -373,7 +369,7 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
     <p class="desc-item">Descarga el corte del día en Excel, o configura el envío automático a Google Sheets.</p>
     <button class="btn btn-verde btn-w" style="margin-bottom:18px;" onclick="exportarExcel()">⬇ Descargar Excel del día</button>
 
-    <div class="aviso">La sincronización entre mesero y cocina usa un servicio gratuito en la nube (kvdb.io). Funciona bien para uso diario, pero si el negocio crece te recomendamos migrar a Firebase para mayor confiabilidad.</div>
+    <div class="aviso">La sincronización entre el receptor de pedidos y cocina usa un servicio gratuito en la nube (kvdb.io). Funciona bien para uso diario, pero si el negocio crece te recomendamos migrar a Firebase para mayor confiabilidad.</div>
 
     <div class="campo">
       <label>URL del Web App de Google Apps Script (opcional)</label>
