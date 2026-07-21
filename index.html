@@ -514,7 +514,7 @@ async function crearSala(){
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({email:'sushi-ngada-hambre@example.com'})
   });
-  if(!r.ok) throw new Error('No se pudo crear la sala');
+  if(!r.ok) throw new Error('HTTP ' + r.status + ' - ' + (await r.text()));
   const id = (await r.text()).trim();
   return id;
 }
@@ -597,7 +597,7 @@ async function irAPareo(){
       document.getElementById('btn-compartir').classList.toggle('oculto', !navigator.share);
       pollTimerPareo = setInterval(revisarHandshake, 2000);
     }catch(e){
-      mostrarAviso('No se pudo crear la sala en la nube. Revisa tu conexión a internet.', 'error');
+      mostrarAviso('No se pudo crear la sala en la nube: ' + (e && e.message ? e.message : e), 'error', 12000);
     }
   } else {
     document.getElementById('cocina-cam-error').classList.add('oculto');
