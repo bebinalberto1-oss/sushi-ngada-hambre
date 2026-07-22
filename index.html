@@ -9,6 +9,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <style>
 :root{
   --bg:#0a0c10;
@@ -369,7 +371,7 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
     <p class="desc-item">Descarga el corte del día en Excel, o configura el envío automático a Google Sheets.</p>
     <button class="btn btn-verde btn-w" style="margin-bottom:18px;" onclick="exportarExcel()">⬇ Descargar Excel del día</button>
 
-    <div class="aviso">La sincronización entre el receptor de pedidos y cocina usa un servicio gratuito en la nube (kvdb.io). Funciona bien para uso diario, pero si el negocio crece te recomendamos migrar a Firebase para mayor confiabilidad.</div>
+    <div class="aviso">La sincronización entre el receptor de pedidos y cocina usa Firebase Realtime Database.</div>
 
     <div class="campo">
       <label>URL del Web App de Google Apps Script (opcional)</label>
@@ -500,32 +502,31 @@ function mostrarAviso(mensaje, tipo='exito', duracion=3400){
 }
 
 /* ============================================================
-   SINCRONIZACIÓN EN LA NUBE (kvdb.io — sin cuenta, gratis)
+   SINCRONIZACIÓN EN LA NUBE (Firebase Realtime Database)
    ============================================================ */
-const KV_BASE = 'https://kvdb.io';
+const firebaseConfig = {
+  apiKey: "AIzaSyDuIgTBOj0iyxUcxCFbdJFU8DhkvSzLhps",
+  authDomain: "sushi-ngada-hambre.firebaseapp.com",
+  databaseURL: "https://sushi-ngada-hambre-default-rtdb.firebaseio.com",
+  projectId: "sushi-ngada-hambre",
+  storageBucket: "sushi-ngada-hambre.firebasestorage.app",
+  messagingSenderId: "138456530544",
+  appId: "1:138456530544:web:0649e9dd8ceeba62fb3eb5"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
 async function crearSala(){
-  const r = await fetch(KV_BASE + '/', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({email:'sushi-ngada-hambre@example.com'})
-  });
-  if(!r.ok) throw new Error('HTTP ' + r.status + ' - ' + (await r.text()));
-  const id = (await r.text()).trim();
-  return id;
+  return db.ref('salas').push().key;
 }
 
 async function leerEstadoNube(){
-  const r = await fetch(`${KV_BASE}/${SALA}/estado?_=${Date.now()}`, {cache:'no-store'});
-  if(r.status === 404) return {pedidos:[], contador:0};
-  if(!r.ok) throw new Error('lectura fallida');
-  const txt = await r.text();
-  try{ return JSON.parse(txt); }catch(e){ return {pedidos:[], contador:0}; }
+  const snap = await db.ref('salas/' + SALA + '/estado').once('value');
+  return snap.val() || {pedidos:[], contador:0};
 }
 
 async function guardarEstadoNube(estado){
-  const r = await fetch(`${KV_BASE}/${SALA}/estado`, {method:'POST', body: JSON.stringify(estado)});
-  if(!r.ok) throw new Error('guardado fallido');
+  await db.ref('salas/' + SALA + '/estado').set(estado);
 }
 
 function marcarConexion(prefijo, ok){
