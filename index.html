@@ -894,6 +894,7 @@ async function enviarComanda(){
     pedidosLocales.push({
       hora: pedido.hora, cliente,
       itemsTexto: carrito.map(l=> `${l.cantidad}x ${l.nombre}${l.empanizado?' ('+l.empanizado+')':''}${l.salsas.length?' ['+l.salsas.join('/')+']':''}${l.notas?' - '+l.notas:''}`).join(' | '),
+      items: carrito.map(l=> ({nombre:l.nombre, categoria:l.categoria, empanizado:l.empanizado, precio:l.precio, cantidad:l.cantidad})),
       total, estado:'pendiente', fecha: new Date().toLocaleDateString('es-MX')
     });
     localStorage.setItem('sng_orders_local', JSON.stringify(pedidosLocales));
@@ -1086,11 +1087,39 @@ function guardarSheetsUrl(){
 
 function exportarExcel(){
   const hoy = new Date().toLocaleDateString('es-MX');
-  const filas = pedidosLocales.filter(p=>p.fecha===hoy);
-  if(filas.length === 0){ mostrarAviso('No hay pedidos registrados hoy en este dispositivo.', 'error'); return; }
-  const ws = XLSX.utils.json_to_sheet(filas.map(f=>({
-    Hora:f.hora, Cliente:f.cliente, Productos:f.itemsTexto, Total:f.total, Estado:f.estado
-  })));
+  const pedidosHoy = pedidosLocales.filter(p=>p.fecha===hoy);
+  if(pedidosHoy.length === 0){ mostrarAviso('No hay pedidos registrados hoy en este dispositivo.', 'error'); return; }
+
+  const filas = [];
+  let totalBebidas = 0;
+  let totalGeneral = 0;
+
+  pedidosHoy.forEach(pedido=>{
+    const items = pedido.items && pedido.items.length ? pedido.items : [{nombre:pedido.itemsTexto, categoria:'', empanizado:null, precio:pedido.total, cantidad:1}];
+    const bebidaItems = items.filter(i=> i.categoria === 'Bebidas');
+    const productoItems = items.filter(i=> i.categoria !== 'Bebidas');
+    const bebidaTexto = bebidaItems.map(i=> `${i.nombre} $${(i.precio*i.cantidad).toFixed(2)}`).join(' / ');
+    bebidaItems.forEach(i=> totalBebidas += i.precio*i.cantidad);
+    totalGeneral += pedido.total;
+
+    const filasPedido = productoItems.length ? productoItems : [null];
+    filasPedido.forEach((item, idx)=>{
+      filas.push({
+        PERSONA: idx === 0 ? pedido.cliente : '',
+        HORA: idx === 0 ? pedido.hora : '',
+        PRODUCTO: item ? `${item.cantidad > 1 ? item.cantidad+'x ' : ''}${item.nombre}` : '',
+        EMPANIZADO: item && item.empanizado ? item.empanizado : '',
+        PRECIO: item ? Number((item.precio*item.cantidad).toFixed(2)) : '',
+        BEBIDA: idx === 0 ? bebidaTexto : ''
+      });
+    });
+  });
+
+  filas.push({PERSONA:'', HORA:'', PRODUCTO:'', EMPANIZADO:'', PRECIO:'', BEBIDA:''});
+  filas.push({PERSONA:'', HORA:'', PRODUCTO:'', EMPANIZADO:'', PRECIO: Number(totalBebidas.toFixed(2)), BEBIDA:'TOTAL BEBIDAS'});
+  filas.push({PERSONA:'', HORA:'', PRODUCTO:'', EMPANIZADO:'', PRECIO: Number(totalGeneral.toFixed(2)), BEBIDA:'TOTAL GENERAL'});
+
+  const ws = XLSX.utils.json_to_sheet(filas);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Pedidos');
   XLSX.writeFile(wb, `sushingada_pedidos_${hoy.replace(/\//g,'-')}.xlsx`);
