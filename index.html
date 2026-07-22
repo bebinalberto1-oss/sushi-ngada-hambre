@@ -28,7 +28,7 @@
   font-size:16px;
 }
 *{box-sizing:border-box;}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--cream);font-family:'Work Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--cream);font-family:'Work Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
 body{
   background-image:
     radial-gradient(circle at 10% 10%, rgba(63,169,245,0.06), transparent 40%),
@@ -103,7 +103,7 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .pareo-caja h2{font-size:24px;margin:0 0 6px;}
 .pareo-caja p{color:var(--muted);font-size:13.5px;line-height:1.5;margin-bottom:20px;}
 #qr-caja{background:#fff;padding:14px;border-radius:12px;display:inline-block;margin-bottom:18px;}
-.codigo-manual{font-family:'Space Mono',monospace;font-size:22px;letter-spacing:3px;background:var(--bg-alt);border:1px dashed var(--blue);color:var(--blue);padding:12px;border-radius:10px;margin-bottom:8px;cursor:pointer;transition:filter .15s;}
+.codigo-manual{font-family:'Space Mono',monospace;font-size:22px;letter-spacing:3px;background:var(--bg-alt);border:1px dashed var(--blue);color:var(--blue);padding:12px;border-radius:10px;margin-bottom:8px;cursor:pointer;transition:filter .15s;word-break:break-all;overflow-wrap:anywhere;}
 .codigo-manual:hover{filter:brightness(1.25);}
 .codigo-hint{font-size:11px;color:var(--muted);margin-bottom:18px;}
 .pareo-ok{color:var(--green);font-weight:700;font-size:14px;margin-bottom:14px;}
@@ -168,7 +168,7 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .stepper span{font-family:'Space Mono';font-size:16px;min-width:22px;text-align:center;}
 
 /* ---------- cocina ---------- */
-#pantalla-cocina .rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;}
+#pantalla-cocina .rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;}
 .boleto{background:repeating-linear-gradient(var(--panel),var(--panel)),var(--panel);border:1px solid var(--line);border-radius:4px;padding:0;position:relative;font-family:'Space Mono',monospace;overflow:hidden;box-shadow:0 8px 22px rgba(0,0,0,.35);}
 .boleto .franja{height:6px;background:repeating-linear-gradient(90deg,var(--blue) 0 10px, transparent 10px 18px);}
 .boleto.estado-listo .franja{background:repeating-linear-gradient(90deg,var(--green) 0 10px, transparent 10px 18px);}
@@ -192,6 +192,27 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 /* ---------- config sheets ---------- */
 .help-code{background:var(--bg-alt);border:1px solid var(--line);border-radius:8px;padding:12px;font-family:'Space Mono';font-size:11px;white-space:pre-wrap;color:var(--blue);max-height:220px;overflow:auto;}
 .aviso{background:rgba(224,165,48,.12);border:1px solid var(--amber);color:var(--amber);font-size:12.5px;border-radius:8px;padding:10px 12px;margin-bottom:14px;line-height:1.5;}
+
+/* ---------- ajustes para celular ---------- */
+@media(max-width:600px){
+  .pantalla{padding:16px;}
+  .inicio-caja h1{font-size:38px;margin:14px 0 4px;}
+  .inicio-sub{margin-bottom:28px;}
+  .rol-card{padding:22px 16px;}
+  .pareo-caja{padding:22px;}
+  .pareo-caja h2{font-size:20px;}
+  .codigo-manual{font-size:16px;letter-spacing:1px;padding:10px;}
+  .modal{padding:18px;}
+  .panel-ticket{position:static;}
+  .boleto-cliente{font-size:16px;}
+  .topbar{gap:10px;}
+  .sala-code{font-size:11px;}
+}
+@media(max-width:380px){
+  .inicio-caja h1{font-size:30px;}
+  .logo-inicio{width:100px;height:100px;}
+  .roles{gap:12px;}
+}
 </style>
 </head>
 <body>
