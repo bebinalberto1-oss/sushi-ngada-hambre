@@ -448,10 +448,10 @@ const MENU = {
   complementos: {
     titulo:'Complementos', empanizable:true, salsasMax:1,
     items:[
-      {id:'c1', nombre:'Dedos de Queso', precio:80, desc:'Cuatro dedos de queso empanizados.'},
-      {id:'c2', nombre:'Dedos Flamin Hot', precio:90, desc:'Cuatro dedos de queso empanizados de Flamin Hot.'},
+      {id:'c1', nombre:'Dedos de Queso', precio:80, desc:'Cuatro dedos de queso empanizados.', empanizadoFijo:'Normal'},
+      {id:'c2', nombre:'Dedos Flamin Hot', precio:90, desc:'Cuatro dedos de queso empanizados de Flamin Hot.', empanizadoFijo:'Flamin Hot'},
       {id:'c3', nombre:'Dedos de Surimi', precio:100, desc:'Cuatro dedos de surimi relleno de queso crema, empanizado.'},
-      {id:'c4', nombre:'Dedos de Coco', precio:90, desc:'Cuatro dedos de queso empanizados de coco dulce.'},
+      {id:'c4', nombre:'Dedos de Coco', precio:90, desc:'Cuatro dedos de queso empanizados de coco dulce.', empanizadoFijo:'Coco'},
     ]
   },
   combos: {
@@ -774,7 +774,8 @@ function renderMenu(){
 /* ---------- modal de configuración de producto ---------- */
 function abrirModalItem(categoriaKey, item){
   const cat = MENU[categoriaKey];
-  itemEnEdicion = {categoriaKey, item, empanizado: cat.empanizable ? 'Normal' : null, salsas: [], notas:'', cantidad:1};
+  const empanizable = cat.empanizable && !item.empanizadoFijo;
+  itemEnEdicion = {categoriaKey, item, empanizado: item.empanizadoFijo || (empanizable ? 'Normal' : null), salsas: [], notas:'', cantidad:1};
 
   document.getElementById('modal-item-nombre').textContent = item.nombre;
   document.getElementById('modal-item-desc').textContent = item.desc;
@@ -782,8 +783,8 @@ function abrirModalItem(categoriaKey, item){
   document.getElementById('cantidad-num').textContent = '1';
 
   const bloqueEmp = document.getElementById('bloque-empanizado');
-  bloqueEmp.classList.toggle('oculto', !cat.empanizable);
-  if(cat.empanizable){
+  bloqueEmp.classList.toggle('oculto', !empanizable);
+  if(empanizable){
     const c = document.getElementById('chips-empanizado');
     c.innerHTML = '';
     EMPANIZADOS.forEach(op=>{
