@@ -674,9 +674,15 @@ async function irAPareo(){
 
   if(ROL === 'mesero'){
     try{
-      SALA = await crearSala();
-      localStorage.setItem('sng_room', SALA);
-      await guardarEstadoNube({pedidos:[], contador:0, cocinaConectada:{activo:false}});
+      if(!SALA){
+        SALA = await crearSala();
+        localStorage.setItem('sng_room', SALA);
+        await guardarEstadoNube({pedidos:[], contador:0, cocinaConectada:{activo:false}});
+      } else {
+        const estadoActual = await leerEstadoNube();
+        estadoActual.cocinaConectada = {activo:false};
+        await guardarEstadoNube(estadoActual);
+      }
       document.getElementById('codigo-sala-txt').textContent = SALA;
       document.getElementById('qr-caja').innerHTML = '';
       const linkQR = location.origin + location.pathname + '?rol=cocina&sala=' + encodeURIComponent(SALA);
@@ -795,8 +801,10 @@ async function conectarASala(codigo){
 
 function vincularOtroDispositivo(){
   if(pollTimer) clearInterval(pollTimer);
-  localStorage.removeItem('sng_room');
-  SALA = null;
+  if(ROL === 'cocina'){
+    localStorage.removeItem('sng_room');
+    SALA = null;
+  }
   irAPareo();
 }
 
