@@ -11,6 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <style>
 :root{
   --bg:#0a0c10;
@@ -98,7 +99,7 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .reset-link{margin-top:28px;font-size:12px;color:var(--muted);text-decoration:underline;cursor:pointer;background:none;}
 
 /* ---------- pareo QR ---------- */
-#pantalla-pareo{display:flex;align-items:center;justify-content:center;}
+#pantalla-pareo,#pantalla-login{display:flex;align-items:center;justify-content:center;}
 .pareo-caja{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:36px;max-width:460px;width:100%;text-align:center;}
 .pareo-caja h2{font-size:24px;margin:0 0 6px;}
 .pareo-caja p{color:var(--muted);font-size:13.5px;line-height:1.5;margin-bottom:20px;}
@@ -218,8 +219,26 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 <body>
 <div id="toast-cont" class="toast-cont"></div>
 
+<!-- ==================== PANTALLA: LOGIN ==================== -->
+<div id="pantalla-login" class="pantalla oculto">
+  <div class="pareo-caja" style="max-width:380px;">
+    <img class="logo-inicio" src="logo.png" alt="Sushi'Ngada Hambre" style="margin-bottom:14px;">
+    <h2>Iniciar sesión</h2>
+    <p>Ingresa con la cuenta del negocio para continuar.</p>
+    <div class="campo">
+      <label>Correo</label>
+      <input type="email" id="login-email" placeholder="correo@ejemplo.com" autocomplete="username">
+    </div>
+    <div class="campo">
+      <label>Contraseña</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter') intentarLogin()">
+    </div>
+    <button class="btn btn-azul btn-w" id="btn-login" onclick="intentarLogin()">Entrar</button>
+  </div>
+</div>
+
 <!-- ==================== PANTALLA: INICIO ==================== -->
-<div id="pantalla-inicio" class="pantalla">
+<div id="pantalla-inicio" class="pantalla oculto">
   <div class="inicio-caja">
     <img class="logo-inicio" src="logo.png" alt="Sushi'Ngada Hambre">
     <h1>Comandas</h1>
@@ -239,6 +258,7 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
       </div>
     </div>
     <button class="reset-link" onclick="reiniciarConfig()">Reiniciar configuración de este dispositivo</button>
+    <button class="reset-link" onclick="cerrarSesion()">Cerrar sesión</button>
   </div>
 </div>
 
@@ -536,6 +556,37 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const auth = firebase.auth();
+
+/* ============================================================
+   INICIO DE SESIÓN
+   ============================================================ */
+function intentarLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if(!email || !password){ mostrarAviso('Escribe correo y contraseña.', 'error'); return; }
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true;
+  btn.textContent = 'Entrando…';
+  auth.signInWithEmailAndPassword(email, password).catch(e=>{
+    const mensajes = {
+      'auth/invalid-email': 'Correo inválido.',
+      'auth/user-not-found': 'Usuario o contraseña incorrectos.',
+      'auth/wrong-password': 'Usuario o contraseña incorrectos.',
+      'auth/invalid-credential': 'Usuario o contraseña incorrectos.',
+      'auth/too-many-requests': 'Demasiados intentos. Espera un momento e intenta de nuevo.'
+    };
+    mostrarAviso(mensajes[e.code] || ('No se pudo iniciar sesión: ' + e.message), 'error');
+  }).finally(()=>{
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  });
+}
+
+function cerrarSesion(){
+  if(!confirm('¿Cerrar sesión en este dispositivo?')) return;
+  auth.signOut();
+}
 
 async function crearSala(){
   return db.ref('salas').push().key;
@@ -562,7 +613,7 @@ function marcarConexion(prefijo, ok){
    NAVEGACIÓN ENTRE PANTALLAS
    ============================================================ */
 function ocultarTodo(){
-  ['pantalla-inicio','pantalla-pareo','pantalla-mesero','pantalla-cocina'].forEach(id=>{
+  ['pantalla-login','pantalla-inicio','pantalla-pareo','pantalla-mesero','pantalla-cocina'].forEach(id=>{
     document.getElementById(id).classList.add('oculto');
   });
 }
@@ -1165,7 +1216,7 @@ async function enviarAGoogleSheets(){
 /* ============================================================
    ARRANQUE
    ============================================================ */
-(function iniciar(){
+function iniciarApp(){
   if(ROL && SALA){
     ROL === 'mesero' ? irAMesero() : irACocina();
   } else if(ROL){
@@ -1173,7 +1224,18 @@ async function enviarAGoogleSheets(){
   } else {
     volverInicio();
   }
-})();
+}
+
+auth.onAuthStateChanged(function(user){
+  if(user){
+    iniciarApp();
+  } else {
+    ocultarTodo();
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-password').value = '';
+    document.getElementById('pantalla-login').classList.remove('oculto');
+  }
+});
 </script>
 </body>
 </html>
