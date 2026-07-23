@@ -328,6 +328,22 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
           <input type="text" id="input-cliente" placeholder="Ej. Mesa 4 / Vianey">
         </div>
         <div id="ticket-lineas"><div class="vacio-msg">Agrega productos del menú →</div></div>
+
+        <div class="campo">
+          <label>Costo de envío</label>
+          <div class="chip-grupo" id="chips-envio">
+            <div class="chip" onclick="seleccionarEnvio(30, this)">$30</div>
+            <div class="chip" onclick="seleccionarEnvio(35, this)">$35</div>
+            <div class="chip" onclick="seleccionarEnvio(40, this)">$40</div>
+            <div class="chip" onclick="seleccionarEnvio(45, this)">$45</div>
+            <div class="chip" onclick="seleccionarEnvioOtro(this)">Otra cantidad</div>
+          </div>
+          <input type="number" id="input-envio-otro" class="oculto" placeholder="Cantidad de envío" min="0" oninput="envioMonto = Number(this.value)||0; renderTicket();">
+        </div>
+
+        <div class="ticket-linea oculto" id="linea-envio-resumen" style="border-bottom:none;">
+          <div class="top"><span>Envío</span><span id="envio-resumen-num">$0</span></div>
+        </div>
         <div class="ticket-total"><span>Total</span><span class="mono" id="ticket-total-num">$0</span></div>
         <button class="btn btn-verde btn-w" id="btn-enviar-comanda" onclick="enviarComanda()">Enviar comanda a cocina 🔥</button>
 
@@ -511,6 +527,7 @@ const APPS_SCRIPT_CODE =
 let ROL = localStorage.getItem('sng_role') || null;
 let SALA = localStorage.getItem('sng_room') || null;
 let carrito = [];
+let envioMonto = 0;
 let itemEnEdicion = null; // {categoria, item, empanizado, salsas:[], notas, cantidad}
 let pollTimer = null;
 let pollTimerPareo = null;
@@ -938,8 +955,37 @@ function renderTicket(){
       cont.appendChild(div);
     });
   }
-  const total = carrito.reduce((s,l)=> s + l.precio*l.cantidad, 0);
+  const subtotal = carrito.reduce((s,l)=> s + l.precio*l.cantidad, 0);
+  const total = subtotal + envioMonto;
+  document.getElementById('envio-resumen-num').textContent = '$' + envioMonto;
+  document.getElementById('linea-envio-resumen').classList.toggle('oculto', envioMonto <= 0);
   document.getElementById('ticket-total-num').textContent = '$' + total;
+}
+
+function seleccionarEnvio(monto, el){
+  envioMonto = monto;
+  document.getElementById('input-envio-otro').classList.add('oculto');
+  [...document.getElementById('chips-envio').children].forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  renderTicket();
+}
+
+function seleccionarEnvioOtro(el){
+  [...document.getElementById('chips-envio').children].forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  const input = document.getElementById('input-envio-otro');
+  input.classList.remove('oculto');
+  input.value = '';
+  input.focus();
+  envioMonto = 0;
+  renderTicket();
+}
+
+function reiniciarEnvio(){
+  envioMonto = 0;
+  document.getElementById('input-envio-otro').classList.add('oculto');
+  document.getElementById('input-envio-otro').value = '';
+  [...document.getElementById('chips-envio').children].forEach(c=>c.classList.remove('sel'));
 }
 
 async function enviarComanda(){
@@ -953,7 +999,8 @@ async function enviarComanda(){
   btn.style.opacity = '.6';
   btn.textContent = 'Enviando…';
 
-  const total = carrito.reduce((s,l)=> s + l.precio*l.cantidad, 0);
+  const subtotal = carrito.reduce((s,l)=> s + l.precio*l.cantidad, 0);
+  const total = subtotal + envioMonto;
   marcarConexion('mesero', false);
   try{
     const estado = await leerEstadoNube();
@@ -963,6 +1010,7 @@ async function enviarComanda(){
       hora: new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'}),
       cliente,
       items: carrito,
+      envio: envioMonto,
       total,
       estado: 'pendiente'
     };
@@ -975,11 +1023,13 @@ async function enviarComanda(){
       hora: pedido.hora, cliente,
       itemsTexto: carrito.map(l=> `${l.cantidad}x ${l.nombre}${l.empanizado?' ('+l.empanizado+')':''}${l.salsas.length?' ['+l.salsas.join('/')+']':''}${l.notas?' - '+l.notas:''}`).join(' | '),
       items: carrito.map(l=> ({nombre:l.nombre, categoria:l.categoria, empanizado:l.empanizado, precio:l.precio, cantidad:l.cantidad})),
+      envio: envioMonto,
       total, estado:'pendiente', fecha: new Date().toLocaleDateString('es-MX')
     });
     localStorage.setItem('sng_orders_local', JSON.stringify(pedidosLocales));
 
     carrito = [];
+    reiniciarEnvio();
     document.getElementById('input-cliente').value = '';
     renderTicket();
     refrescarHistorial();
