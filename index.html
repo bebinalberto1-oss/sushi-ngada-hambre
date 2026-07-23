@@ -663,7 +663,7 @@ async function irAPareo(){
       document.getElementById('codigo-sala-txt').textContent = SALA;
       document.getElementById('qr-caja').innerHTML = '';
       const linkQR = location.origin + location.pathname + '?rol=cocina&sala=' + encodeURIComponent(SALA);
-      new QRCode(document.getElementById('qr-caja'), {text: linkQR, width:200, height:200, colorDark:'#0a0c10', colorLight:'#ffffff'});
+      new QRCode(document.getElementById('qr-caja'), {text: linkQR, width:260, height:260, colorDark:'#0a0c10', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.L});
       document.getElementById('btn-compartir').classList.toggle('oculto', !navigator.share);
       pollTimerPareo = setInterval(revisarHandshake, 2000);
     }catch(e){
