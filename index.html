@@ -662,7 +662,8 @@ async function irAPareo(){
       await guardarEstadoNube({pedidos:[], contador:0, cocinaConectada:{activo:false}});
       document.getElementById('codigo-sala-txt').textContent = SALA;
       document.getElementById('qr-caja').innerHTML = '';
-      new QRCode(document.getElementById('qr-caja'), {text: SALA, width:200, height:200, colorDark:'#0a0c10', colorLight:'#ffffff'});
+      const linkQR = location.origin + location.pathname + '?rol=cocina&sala=' + encodeURIComponent(SALA);
+      new QRCode(document.getElementById('qr-caja'), {text: linkQR, width:200, height:200, colorDark:'#0a0c10', colorLight:'#ffffff'});
       document.getElementById('btn-compartir').classList.toggle('oculto', !navigator.share);
       pollTimerPareo = setInterval(revisarHandshake, 2000);
     }catch(e){
@@ -726,7 +727,7 @@ async function iniciarEscanerQR(){
         const codigo = jsQR(img.data, img.width, img.height);
         if(codigo && codigo.data){
           detenerCamara();
-          conectarASala(codigo.data.trim());
+          conectarASala(extraerCodigoSala(codigo.data.trim()));
           return;
         }
       }
@@ -753,7 +754,13 @@ function conectarManual(){
   const val = document.getElementById('input-codigo-manual').value.trim();
   if(!val){ mostrarAviso('Escribe el código de sala.', 'error'); return; }
   detenerCamara();
-  conectarASala(val);
+  conectarASala(extraerCodigoSala(val));
+}
+function extraerCodigoSala(texto){
+  if(/^https?:\/\//i.test(texto)){
+    try{ return new URL(texto).searchParams.get('sala') || texto; }catch(e){ return texto; }
+  }
+  return texto;
 }
 async function conectarASala(codigo){
   SALA = codigo;
@@ -1226,9 +1233,23 @@ function iniciarApp(){
   }
 }
 
+function manejarParametrosURL(){
+  const params = new URLSearchParams(location.search);
+  const rolParam = params.get('rol');
+  const salaParam = params.get('sala');
+  if(rolParam === 'cocina' && salaParam){
+    ROL = 'cocina';
+    localStorage.setItem('sng_role', 'cocina');
+    history.replaceState(null, '', location.pathname);
+    conectarASala(salaParam);
+    return true;
+  }
+  return false;
+}
+
 auth.onAuthStateChanged(function(user){
   if(user){
-    iniciarApp();
+    if(!manejarParametrosURL()) iniciarApp();
   } else {
     ocultarTodo();
     document.getElementById('login-email').value = '';
