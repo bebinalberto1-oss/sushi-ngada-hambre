@@ -421,6 +421,33 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
   </div>
 </div>
 
+<!-- ==================== MODAL: EDITAR PEDIDO ==================== -->
+<div class="overlay oculto" id="overlay-editar-pedido">
+  <div class="modal">
+    <h3>Editar pedido</h3>
+    <p class="desc-item" id="editar-folio-txt">—</p>
+
+    <div class="campo">
+      <label>Nombre del cliente</label>
+      <input type="text" id="editar-cliente">
+    </div>
+
+    <div id="editar-items-lista"></div>
+
+    <div class="campo">
+      <label>Costo de envío</label>
+      <input type="number" id="editar-envio" min="0" oninput="actualizarTotalEdicion()">
+    </div>
+
+    <div class="ticket-total"><span>Total</span><span class="mono" id="editar-total-num">$0</span></div>
+
+    <div class="fila-btns">
+      <button class="btn btn-fantasma" onclick="cerrarEditarPedido()">Cancelar</button>
+      <button class="btn btn-verde" onclick="guardarEdicionPedido()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== MODAL: EXPORTAR / GOOGLE SHEETS ==================== -->
 <div class="overlay oculto" id="overlay-config">
   <div class="modal">
@@ -1041,6 +1068,7 @@ async function enviarComanda(){
     document.getElementById('input-cliente').value = '';
     renderTicket();
     refrescarHistorial();
+    pitarConfirmacionEnvio();
     mostrarAviso(`Pedido de "${cliente}" enviado a cocina (folio ${pedido.id})`, 'exito');
   }catch(e){
     marcarConexion('mesero', false);
@@ -1066,12 +1094,113 @@ async function refrescarHistorial(){
     lista.forEach(p=>{
       const div = document.createElement('div');
       div.className = 'hist-item';
+      div.style.cursor = 'pointer';
+      div.title = 'Toca para editar este pedido';
       div.innerHTML = `<span>${p.hora} · ${p.cliente} · $${p.total}</span><span class="badge ${p.estado}">${p.estado}</span>`;
+      div.onclick = ()=> abrirEditarPedido(p.id);
       cont.appendChild(div);
     });
   }catch(e){
     marcarConexion('mesero', false);
   }
+}
+
+/* ---------- editar pedido ---------- */
+let pedidoEnEdicion = null;
+
+async function abrirEditarPedido(idPedido){
+  try{
+    const estado = await leerEstadoNube();
+    const p = (estado.pedidos || []).find(x=> x.id === idPedido);
+    if(!p){ mostrarAviso('No se encontró el pedido.', 'error'); return; }
+    pedidoEnEdicion = JSON.parse(JSON.stringify(p));
+    if(!pedidoEnEdicion.items) pedidoEnEdicion.items = [];
+    if(typeof pedidoEnEdicion.envio !== 'number') pedidoEnEdicion.envio = 0;
+    document.getElementById('editar-folio-txt').textContent = `Folio ${p.id} · ${p.hora}`;
+    document.getElementById('editar-cliente').value = p.cliente;
+    document.getElementById('editar-envio').value = pedidoEnEdicion.envio || '';
+    renderEdicionItems();
+    document.getElementById('overlay-editar-pedido').classList.remove('oculto');
+  }catch(e){
+    mostrarAviso('No se pudo cargar el pedido para editar.', 'error');
+  }
+}
+
+function renderEdicionItems(){
+  const cont = document.getElementById('editar-items-lista');
+  cont.innerHTML = '';
+  if(pedidoEnEdicion.items.length === 0){
+    cont.innerHTML = '<div class="vacio-msg">Sin productos</div>';
+  } else {
+    pedidoEnEdicion.items.forEach((linea, idx)=>{
+      const div = document.createElement('div');
+      div.className = 'ticket-linea';
+      const metaPartes = [];
+      if(linea.empanizado) metaPartes.push('Empanizado: ' + linea.empanizado);
+      if(linea.salsas && linea.salsas.length) metaPartes.push('Salsas: ' + linea.salsas.join(', '));
+      if(linea.notas) metaPartes.push('Nota: ' + linea.notas);
+      div.innerHTML = `
+        <div class="top"><span>${linea.cantidad}× ${linea.nombre}</span><span>$${linea.precio*linea.cantidad}</span></div>
+        <div class="meta">${metaPartes.join(' · ') || 'Sin personalización'}</div>
+        <button class="quitar">Quitar</button>`;
+      div.querySelector('.quitar').onclick = ()=>{ pedidoEnEdicion.items.splice(idx,1); renderEdicionItems(); };
+      cont.appendChild(div);
+    });
+  }
+  actualizarTotalEdicion();
+}
+
+function actualizarTotalEdicion(){
+  if(!pedidoEnEdicion) return;
+  const envio = Number(document.getElementById('editar-envio').value) || 0;
+  const subtotal = pedidoEnEdicion.items.reduce((s,l)=> s + l.precio*l.cantidad, 0);
+  document.getElementById('editar-total-num').textContent = '$' + (subtotal + envio);
+}
+
+function cerrarEditarPedido(){
+  document.getElementById('overlay-editar-pedido').classList.add('oculto');
+  pedidoEnEdicion = null;
+}
+
+async function guardarEdicionPedido(){
+  if(!pedidoEnEdicion) return;
+  const cliente = document.getElementById('editar-cliente').value.trim();
+  if(!cliente){ mostrarAviso('Escribe el nombre del cliente.', 'error'); return; }
+  const envio = Number(document.getElementById('editar-envio').value) || 0;
+  const subtotal = pedidoEnEdicion.items.reduce((s,l)=> s + l.precio*l.cantidad, 0);
+  const total = subtotal + envio;
+  try{
+    const estado = await leerEstadoNube();
+    const idx = (estado.pedidos || []).findIndex(x=> x.id === pedidoEnEdicion.id);
+    if(idx === -1){ mostrarAviso('El pedido ya no existe en la nube.', 'error'); return; }
+    estado.pedidos[idx].cliente = cliente;
+    estado.pedidos[idx].items = pedidoEnEdicion.items;
+    estado.pedidos[idx].envio = envio;
+    estado.pedidos[idx].total = total;
+    await guardarEstadoNube(estado);
+    cerrarEditarPedido();
+    refrescarHistorial();
+    mostrarAviso('Pedido actualizado.', 'exito');
+  }catch(e){
+    mostrarAviso('No se pudo guardar el cambio.', 'error');
+  }
+}
+
+function pitarConfirmacionEnvio(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const ahora = audioCtx.currentTime;
+    [0, 0.16, 0.32].forEach(offset=>{
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.type = 'square'; o.frequency.value = 660;
+      g.gain.setValueAtTime(0.0001, ahora+offset);
+      g.gain.exponentialRampToValueAtTime(0.45, ahora+offset+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ahora+offset+0.15);
+      o.start(ahora+offset); o.stop(ahora+offset+0.16);
+    });
+  }catch(e){}
 }
 
 /* ============================================================
