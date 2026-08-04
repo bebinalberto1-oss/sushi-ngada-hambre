@@ -567,6 +567,24 @@ let audioDesbloqueado = false;
 let primerCargaCocina = true;
 const tituloOriginal = document.title;
 let flashTituloTimer = null;
+let wakeLock = null;
+
+/* ============================================================
+   MANTENER PANTALLA ACTIVA (evita que el celular se duerma
+   y corte la conexión mientras se usa como mesero o cocina)
+   ============================================================ */
+async function mantenerPantallaActiva(){
+  try{
+    if('wakeLock' in navigator){
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  }catch(e){ /* no soportado o rechazado; seguimos sin bloquear la pantalla */ }
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible' && (ROL === 'mesero' || ROL === 'cocina')){
+    mantenerPantallaActiva();
+  }
+});
 
 document.getElementById('codigo-apps-script').textContent = APPS_SCRIPT_CODE;
 
@@ -843,6 +861,7 @@ let tabActiva = 'rollos';
 
 function irAMesero(){
   if(pollTimerPareo) clearInterval(pollTimerPareo);
+  mantenerPantallaActiva();
   ocultarTodo();
   document.getElementById('pantalla-mesero').classList.remove('oculto');
   document.getElementById('mesero-sala-code').textContent = 'sala ' + SALA;
@@ -1209,6 +1228,7 @@ function pitarConfirmacionEnvio(){
    ============================================================ */
 function irACocina(){
   if(pollTimerPareo) clearInterval(pollTimerPareo);
+  mantenerPantallaActiva();
   ocultarTodo();
   document.getElementById('pantalla-cocina').classList.remove('oculto');
   document.getElementById('cocina-sala-code').textContent = 'sala ' + SALA;
