@@ -396,6 +396,8 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
       <div class="chip-grupo" id="chips-empanizado"></div>
     </div>
 
+    <div id="bloque-empanizados-combo" class="oculto"></div>
+
     <div id="bloque-salsas">
       <div class="campo"><label id="label-salsas">Salsas (máx. 2)</label></div>
       <div class="chip-grupo" id="chips-salsas"></div>
@@ -521,10 +523,10 @@ const MENU = {
   combos: {
     titulo:'Combos', empanizable:false, salsasMax:2,
     items:[
-      {id:'k1', nombre:'Combo Ele', precio:150, desc:'1 Rollo Vianey + 2 dedos de queso + agua de jamaica.'},
-      {id:'k2', nombre:'Combo Chuy', precio:215, desc:'1 Rollo Edson + 1 Rollo Vianey + 1L agua de limón.'},
-      {id:'k3', nombre:'Combo Saúl', precio:250, desc:'1 Rollo Edson + 1 Rollo Vianey + 2 dedos de surimi + 1L agua de jamaica.'},
-      {id:'k4', nombre:'Combo Aldo', precio:300, desc:'2 Bolas Arely + 4 dedos de Surimi.'},
+      {id:'k1', nombre:'Combo Ele', precio:150, desc:'1 Rollo Vianey + 2 dedos de queso + agua de jamaica.', rollos:['Vianey']},
+      {id:'k2', nombre:'Combo Chuy', precio:215, desc:'1 Rollo Edson + 1 Rollo Vianey + 1L agua de limón.', rollos:['Edson','Vianey']},
+      {id:'k3', nombre:'Combo Saúl', precio:250, desc:'1 Rollo Edson + 1 Rollo Vianey + 2 dedos de surimi + 1L agua de jamaica.', rollos:['Edson','Vianey']},
+      {id:'k4', nombre:'Combo Aldo', precio:300, desc:'2 Bolas Arely + 4 dedos de Surimi.', rollos:[]},
     ]
   },
   bebidas: {
@@ -904,8 +906,9 @@ function renderMenu(){
 /* ---------- modal de configuración de producto ---------- */
 function abrirModalItem(categoriaKey, item){
   const cat = MENU[categoriaKey];
-  const empanizable = cat.empanizable && !item.empanizadoFijo;
-  itemEnEdicion = {categoriaKey, item, empanizado: item.empanizadoFijo || (empanizable ? 'Normal' : null), salsas: [], notas:'', cantidad:1};
+  const tieneRollosCombo = item.rollos && item.rollos.length > 0;
+  const empanizable = cat.empanizable && !item.empanizadoFijo && !tieneRollosCombo;
+  itemEnEdicion = {categoriaKey, item, empanizado: item.empanizadoFijo || (empanizable ? 'Normal' : null), empanizadoPorRollo: null, salsas: [], notas:'', cantidad:1};
 
   document.getElementById('modal-item-nombre').textContent = item.nombre;
   document.getElementById('modal-item-desc').textContent = item.desc;
@@ -927,6 +930,36 @@ function abrirModalItem(categoriaKey, item){
         chip.classList.add('sel');
       };
       c.appendChild(chip);
+    });
+  }
+
+  const bloqueCombo = document.getElementById('bloque-empanizados-combo');
+  bloqueCombo.classList.toggle('oculto', !tieneRollosCombo);
+  bloqueCombo.innerHTML = '';
+  if(tieneRollosCombo){
+    itemEnEdicion.empanizadoPorRollo = {};
+    item.rollos.forEach(rollo=>{
+      itemEnEdicion.empanizadoPorRollo[rollo] = 'Normal';
+      const campo = document.createElement('div');
+      campo.className = 'campo';
+      const etiqueta = document.createElement('label');
+      etiqueta.textContent = 'Empanizado — Rollo ' + rollo;
+      const grupo = document.createElement('div');
+      grupo.className = 'chip-grupo';
+      EMPANIZADOS.forEach(op=>{
+        const chip = document.createElement('div');
+        chip.className = 'chip' + (op==='Normal' ? ' sel' : '');
+        chip.textContent = op;
+        chip.onclick = ()=>{
+          itemEnEdicion.empanizadoPorRollo[rollo] = op;
+          [...grupo.children].forEach(ch=>ch.classList.remove('sel'));
+          chip.classList.add('sel');
+        };
+        grupo.appendChild(chip);
+      });
+      campo.appendChild(etiqueta);
+      campo.appendChild(grupo);
+      bloqueCombo.appendChild(campo);
     });
   }
 
@@ -980,6 +1013,7 @@ function confirmarAgregarItem(){
     categoria: MENU[itemEnEdicion.categoriaKey].titulo,
     precio: itemEnEdicion.item.precio,
     empanizado: itemEnEdicion.empanizado,
+    empanizadoPorRollo: itemEnEdicion.empanizadoPorRollo,
     salsas: [...itemEnEdicion.salsas],
     notas: itemEnEdicion.notas,
     cantidad: itemEnEdicion.cantidad
@@ -989,6 +1023,10 @@ function confirmarAgregarItem(){
 }
 
 /* ---------- ticket / carrito ---------- */
+function textoEmpanizadoPorRollo(obj){
+  return Object.entries(obj).map(([rollo,emp])=> `${rollo}: ${emp}`).join(' · ');
+}
+
 function renderTicket(){
   const cont = document.getElementById('ticket-lineas');
   cont.innerHTML = '';
@@ -999,7 +1037,8 @@ function renderTicket(){
       const div = document.createElement('div');
       div.className = 'ticket-linea';
       const metaPartes = [];
-      if(linea.empanizado) metaPartes.push('Empanizado: ' + linea.empanizado);
+      if(linea.empanizadoPorRollo) metaPartes.push(textoEmpanizadoPorRollo(linea.empanizadoPorRollo));
+      else if(linea.empanizado) metaPartes.push('Empanizado: ' + linea.empanizado);
       if(linea.salsas.length) metaPartes.push('Salsas: ' + linea.salsas.join(', '));
       if(linea.notas) metaPartes.push('Nota: ' + linea.notas);
       div.innerHTML = `
@@ -1076,8 +1115,8 @@ async function enviarComanda(){
 
     pedidosLocales.push({
       hora: pedido.hora, cliente,
-      itemsTexto: carrito.map(l=> `${l.cantidad}x ${l.nombre}${l.empanizado?' ('+l.empanizado+')':''}${l.salsas.length?' ['+l.salsas.join('/')+']':''}${l.notas?' - '+l.notas:''}`).join(' | '),
-      items: carrito.map(l=> ({nombre:l.nombre, categoria:l.categoria, empanizado:l.empanizado, precio:l.precio, cantidad:l.cantidad})),
+      itemsTexto: carrito.map(l=> `${l.cantidad}x ${l.nombre}${l.empanizadoPorRollo?' ('+textoEmpanizadoPorRollo(l.empanizadoPorRollo)+')':(l.empanizado?' ('+l.empanizado+')':'')}${l.salsas.length?' ['+l.salsas.join('/')+']':''}${l.notas?' - '+l.notas:''}`).join(' | '),
+      items: carrito.map(l=> ({nombre:l.nombre, categoria:l.categoria, empanizado:l.empanizado, empanizadoPorRollo:l.empanizadoPorRollo, precio:l.precio, cantidad:l.cantidad})),
       envio: envioMonto,
       total, estado:'pendiente', fecha: new Date().toLocaleDateString('es-MX')
     });
@@ -1156,7 +1195,8 @@ function renderEdicionItems(){
       const div = document.createElement('div');
       div.className = 'ticket-linea';
       const metaPartes = [];
-      if(linea.empanizado) metaPartes.push('Empanizado: ' + linea.empanizado);
+      if(linea.empanizadoPorRollo) metaPartes.push(textoEmpanizadoPorRollo(linea.empanizadoPorRollo));
+      else if(linea.empanizado) metaPartes.push('Empanizado: ' + linea.empanizado);
       if(linea.salsas && linea.salsas.length) metaPartes.push('Salsas: ' + linea.salsas.join(', '));
       if(linea.notas) metaPartes.push('Nota: ' + linea.notas);
       div.innerHTML = `
@@ -1331,7 +1371,13 @@ function pintarCocina(pedidos){
     boleto.className = 'boleto estado-' + p.estado;
     const itemsHtml = p.items.map(l=>{
       const tags = [];
-      if(l.empanizado) tags.push(`<span class="tag ${l.empanizado==='Flamin Hot'?'picante':''}">${l.empanizado}</span>`);
+      if(l.empanizadoPorRollo){
+        Object.entries(l.empanizadoPorRollo).forEach(([rollo,emp])=>{
+          tags.push(`<span class="tag ${emp==='Flamin Hot'?'picante':''}">${rollo}: ${emp}</span>`);
+        });
+      } else if(l.empanizado){
+        tags.push(`<span class="tag ${l.empanizado==='Flamin Hot'?'picante':''}">${l.empanizado}</span>`);
+      }
       l.salsas.forEach(s=> tags.push(`<span class="tag">${s}</span>`));
       if(l.notas) tags.push(`<span class="tag nota">⚠ ${l.notas}</span>`);
       return `<div class="boleto-item"><div class="nombre">${l.cantidad}× ${l.nombre}</div><div class="tags">${tags.join('')}</div></div>`;
@@ -1410,7 +1456,7 @@ function exportarExcel(){
         PERSONA: idx === 0 ? pedido.cliente : '',
         HORA: idx === 0 ? pedido.hora : '',
         PRODUCTO: item ? `${item.cantidad > 1 ? item.cantidad+'x ' : ''}${item.nombre}` : '',
-        EMPANIZADO: item && item.empanizado ? item.empanizado : '',
+        EMPANIZADO: item ? (item.empanizadoPorRollo ? textoEmpanizadoPorRollo(item.empanizadoPorRollo) : (item.empanizado || '')) : '',
         PRECIO: item ? Number((item.precio*item.cantidad).toFixed(2)) : '',
         BEBIDA: idx === 0 ? bebidaTexto : ''
       });
