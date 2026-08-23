@@ -1247,10 +1247,24 @@ function activarAudio(){
     audioDesbloqueado = true;
     document.getElementById('banner-audio').classList.add('oculto');
     pitar();
+    anunciarPedidoNuevo();
     mostrarAviso('Alertas de sonido activadas.', 'exito');
   }catch(e){
     mostrarAviso('Este navegador no permite activar el sonido. Mantén el volumen del dispositivo alto.', 'error');
   }
+}
+
+function anunciarPedidoNuevo(){
+  if(!document.getElementById('chk-sonido').checked) return;
+  try{
+    if(!('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance('Pedido nuevo');
+    utter.lang = 'es-MX';
+    utter.rate = 1;
+    utter.volume = 1;
+    speechSynthesis.speak(utter);
+  }catch(e){}
 }
 
 function pitar(){
@@ -1294,7 +1308,7 @@ async function refrescarCocina(){
     marcarConexion('cocina', true);
     const activos = (estado.pedidos || []).filter(p=> p.estado !== 'entregado');
     if(!primerCargaCocina && activos.length > ultimoConteoPedidos){
-      pitar(); flashAlerta(); vibrarSiPosible(); flashTitulo();
+      pitar(); flashAlerta(); vibrarSiPosible(); flashTitulo(); anunciarPedidoNuevo();
       mostrarAviso('🔥 ¡Nuevo pedido recibido!', 'info');
     }
     primerCargaCocina = false;
