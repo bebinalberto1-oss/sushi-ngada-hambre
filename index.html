@@ -240,8 +240,28 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .eq-res-linea.meta .val{color:var(--green);font-size:18px;font-weight:800;}
 .eq-hist{margin-top:16px;}
 .eq-hist h4{font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:0 0 8px;font-family:'Work Sans';}
-.eq-hist-item{display:flex;justify-content:space-between;gap:10px;background:var(--bg-alt);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:11.5px;color:var(--muted);}
+.eq-hist-item{display:flex;justify-content:space-between;gap:10px;background:var(--bg-alt);border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin-bottom:6px;font-size:11.5px;color:var(--muted);}
+.eq-hist-item.actual{border-color:var(--blue);}
 .eq-hist-item .meta-v{color:var(--green);font-weight:700;}
+.eq-hist-item .falta{color:var(--amber);font-weight:700;}
+.eq-hist-item .ok{color:var(--green);font-weight:700;}
+
+/* progreso del fin */
+.eq-nav-fin{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;}
+.eq-nav-fin button{width:32px;height:32px;flex:none;border-radius:8px;background:var(--bg-alt);border:1px solid var(--line);color:var(--cream);font-size:14px;cursor:pointer;}
+.eq-nav-fin .rango{font-weight:700;font-size:13px;color:var(--cream);text-align:center;flex:1;}
+.eq-barra{height:12px;border-radius:999px;background:var(--bg-alt);border:1px solid var(--line);overflow:hidden;margin:8px 0 4px;}
+.eq-barra-fill{height:100%;background:var(--green);transition:width .3s;}
+.eq-prog-nums{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);}
+.eq-prog-nums b{color:var(--cream);font-family:'Space Mono';}
+
+/* tarjeta en pantalla de inicio */
+.inicio-extra{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-top:18px;cursor:pointer;text-align:left;transition:border-color .15s, transform .15s;}
+.inicio-extra:hover{border-color:var(--blue);transform:translateY(-2px);}
+.inicio-extra .icono{font-size:26px;flex:none;}
+.inicio-extra .txt h3{font-size:16px;margin:0 0 4px;}
+.inicio-extra .txt p{color:var(--muted);font-size:12.5px;margin:0;line-height:1.45;}
+.inicio-extra .chevron{margin-left:auto;color:var(--blue);font-size:20px;flex:none;}
 </style>
 </head>
 <body>
@@ -286,6 +306,16 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
         <button class="btn btn-rojo btn-w" onclick="elegirRol('cocina')">Ver comandas</button>
       </div>
     </div>
+
+    <div class="inicio-extra" onclick="abrirEquilibrio()">
+      <div class="icono">📊</div>
+      <div class="txt">
+        <h3>Punto de equilibrio y ventas</h3>
+        <p>Cuánto necesitas vender el fin de semana, cuánto llevas vendido, y el calendario de ventas por fin.</p>
+      </div>
+      <div class="chevron">→</div>
+    </div>
+
     <button class="reset-link" onclick="reiniciarConfig()">Reiniciar configuración de este dispositivo</button>
     <button class="reset-link" onclick="cerrarSesion()">Cerrar sesión</button>
   </div>
@@ -338,7 +368,6 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:8px;">
         <span class="sala-code" id="mesero-sala-code">sala ------</span>
         <div class="estado-conexion"><span class="punto" id="mesero-punto"></span><span id="mesero-estado-txt">conectando…</span></div>
-        <button class="btn btn-fantasma" onclick="abrirEquilibrio()">📊 Equilibrio</button>
         <button class="btn btn-fantasma" onclick="mostrarConfigSheets()">⚙ Exportar</button>
         <button class="btn btn-fantasma" onclick="vincularOtroDispositivo()">🔗 Vincular</button>
         <button class="btn btn-fantasma" onclick="volverInicio()">Salir</button>
@@ -551,14 +580,24 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 
     <div class="eq-res" id="eq-res"></div>
 
+    <div class="eq-seccion" style="margin-top:16px;">
+      <h4>📈 Progreso del fin de semana</h4>
+      <div class="eq-nav-fin">
+        <button onclick="navFinEq(-1)">◀</button>
+        <div class="rango" id="eq-fin-rango">—</div>
+        <button onclick="navFinEq(1)">▶</button>
+      </div>
+      <div id="eq-progreso"></div>
+      <button class="btn btn-fantasma btn-w" style="font-size:12px;padding:9px;margin-top:10px;" onclick="guardarMetaEq()">Guardar la meta calculada para este fin</button>
+    </div>
+
     <div class="eq-hist">
-      <h4>🗂 Historial de fines de semana</h4>
-      <div id="eq-hist-lista"><p style="font-size:12px;color:var(--muted);">Sin registros aún.</p></div>
+      <h4>🗓 Calendario de ventas por fin de semana</h4>
+      <div id="eq-hist-lista"><p style="font-size:12px;color:var(--muted);">Sin ventas registradas todavía.</p></div>
     </div>
 
     <div class="fila-btns" style="margin-top:16px;">
-      <button class="btn btn-verde" onclick="guardarHistorialEq()">Guardar en historial</button>
-      <button class="btn btn-fantasma" onclick="cerrarEquilibrio()">Cerrar</button>
+      <button class="btn btn-fantasma btn-w" onclick="cerrarEquilibrio()">Cerrar</button>
     </div>
   </div>
 </div>
@@ -1200,7 +1239,7 @@ async function enviarComanda(){
       itemsTexto: carrito.map(l=> `${l.cantidad}x ${l.nombre}${l.empanizadoPorRollo?' ('+textoEmpanizadoPorRollo(l.empanizadoPorRollo)+')':(l.empanizado?' ('+l.empanizado+')':'')}${l.salsas.length?' ['+l.salsas.join('/')+']':''}${l.notas?' - '+l.notas:''}`).join(' | '),
       items: carrito.map(l=> ({nombre:l.nombre, categoria:l.categoria, empanizado:l.empanizado, empanizadoPorRollo:l.empanizadoPorRollo, precio:l.precio, cantidad:l.cantidad})),
       envio: envioMonto,
-      total, estado:'pendiente', fecha: new Date().toLocaleDateString('es-MX')
+      total, estado:'pendiente', fecha: new Date().toLocaleDateString('es-MX'), ts: Date.now()
     });
     localStorage.setItem('sng_orders_local', JSON.stringify(pedidosLocales));
 
@@ -1575,13 +1614,17 @@ async function enviarAGoogleSheets(){
    ============================================================ */
 let trabajadoresEq = [];
 let diasSelEq = 2;
+let finSeleccionadoEq = null;   // Date: el sábado del fin de semana seleccionado
+const TICKET_PROM = 130;
+const MARGEN_EQ = 0.40;
 
 function abrirEquilibrio(){
   document.getElementById('overlay-equilibrio').classList.remove('oculto');
   if(trabajadoresEq.length === 0) trabajadoresEq = [{nombre:'', pago:''}];
+  finSeleccionadoEq = sabadoDelFin(new Date());
   renderTrabajadoresEq();
-  cargarHistorialEq();
   calcularEq();
+  renderCalendarioEq();
 }
 function cerrarEquilibrio(){ document.getElementById('overlay-equilibrio').classList.add('oculto'); }
 
@@ -1625,11 +1668,13 @@ function totalesEq(){
 function calcularEq(){
   const t = totalesEq();
   const res = document.getElementById('eq-res');
-  if(t.total === 0){ res.innerHTML = '<p style="font-size:12px;color:var(--muted);">Ingresa los datos para ver el cálculo.</p>'; return; }
-  const margen = 0.40;
-  const ventasNec = Math.ceil(t.total / margen);
-  const ticketProm = 130;
-  const pedidosNec = Math.ceil(ventasNec / ticketProm);
+  if(t.total === 0){
+    res.innerHTML = '<p style="font-size:12px;color:var(--muted);">Ingresa los datos para ver el cálculo.</p>';
+    renderProgresoEq();
+    return;
+  }
+  const ventasNec = Math.ceil(t.total / MARGEN_EQ);
+  const pedidosNec = Math.ceil(ventasNec / TICKET_PROM);
   res.innerHTML = `
     <div class="eq-res-linea"><span>Inversión en producto</span><span>$${fmtEq(t.inversion)}</span></div>
     <div class="eq-res-linea"><span>Otros gastos</span><span>$${fmtEq(t.otros)}</span></div>
@@ -1637,33 +1682,126 @@ function calcularEq(){
     <div class="eq-res-linea"><span>Ahorro (${diasSelEq} día${diasSelEq>1?'s':''} × $${fmtEq(t.ahorroDia)})</span><span>$${fmtEq(t.ahorro)}</span></div>
     <div class="eq-res-linea total"><span>Total de costos del fin de semana</span><span>$${fmtEq(t.total)}</span></div>
     <div class="eq-res-linea meta"><span>🎯 Necesitas vender (margen 40%)</span><span class="val">$${fmtEq(ventasNec)}</span></div>
-    <div class="eq-res-linea"><span>📦 Aprox. pedidos (ticket ~$${ticketProm})</span><span>${pedidosNec} pedidos</span></div>
+    <div class="eq-res-linea"><span>📦 Aprox. pedidos (ticket ~$${TICKET_PROM})</span><span>${pedidosNec} pedidos</span></div>
     <div class="eq-res-linea"><span>📅 Por día (${diasSelEq} día${diasSelEq>1?'s':''})</span><span>$${fmtEq(Math.ceil(ventasNec/diasSelEq))} / día</span></div>
     <p style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;">* Margen bruto estimado 40% sobre ventas. Ajusta la inversión real cada fin de semana.</p>`;
+  renderProgresoEq();
 }
 
-function guardarHistorialEq(){
-  const t = totalesEq();
-  if(t.total === 0){ mostrarAviso('Ingresa los datos primero.', 'error'); return; }
-  const ventasNec = Math.ceil(t.total / 0.40);
-  const fecha = new Date().toLocaleDateString('es-MX', {weekday:'short', day:'numeric', month:'short'});
-  const hist = JSON.parse(localStorage.getItem('sng_eq_historial') || '[]');
-  hist.unshift({fecha, inversion:t.inversion, total:t.total, ventasNec, dias:diasSelEq, ts:Date.now()});
-  if(hist.length > 20) hist.pop();
-  localStorage.setItem('sng_eq_historial', JSON.stringify(hist));
-  mostrarAviso('Guardado en historial.', 'exito');
-  cargarHistorialEq();
+/* ---------- fines de semana y ventas reales ---------- */
+function isoDia(d){
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function sabadoDelFin(fecha){
+  const d = new Date(fecha); d.setHours(0,0,0,0);
+  const dow = d.getDay();            // 0 dom .. 6 sáb
+  if(dow === 6) return d;
+  if(dow === 0){ d.setDate(d.getDate() - 1); return d; }
+  d.setDate(d.getDate() + (6 - dow)); // lun..vie -> sábado próximo
+  return d;
+}
+function parseFechaMX(s){
+  const m = String(s).split('/');
+  if(m.length !== 3) return null;
+  return new Date(Number(m[2]), Number(m[1]) - 1, Number(m[0]));
+}
+function fechaDePedido(p){
+  if(p.ts) return new Date(p.ts);
+  if(p.fecha) return parseFechaMX(p.fecha);
+  return null;
+}
+function ventasDeFin(sat){
+  const dom = new Date(sat); dom.setDate(sat.getDate() + 1);
+  const kSat = isoDia(sat), kDom = isoDia(dom);
+  let total = 0, count = 0;
+  pedidosLocales.forEach(p=>{
+    const f = fechaDePedido(p);
+    if(!f) return;
+    f.setHours(0,0,0,0);
+    const k = isoDia(f);
+    if(k === kSat || k === kDom){ total += (Number(p.total) || 0); count++; }
+  });
+  return {total, count};
+}
+function rangoFinTexto(sat){
+  const dom = new Date(sat); dom.setDate(sat.getDate() + 1);
+  const opt = {day:'numeric', month:'short'};
+  return `Sáb ${sat.toLocaleDateString('es-MX', opt)} – Dom ${dom.toLocaleDateString('es-MX', opt)}`;
 }
 
-function cargarHistorialEq(){
+function renderProgresoEq(){
+  if(!finSeleccionadoEq) finSeleccionadoEq = sabadoDelFin(new Date());
+  const sat = finSeleccionadoEq;
+  document.getElementById('eq-fin-rango').textContent = rangoFinTexto(sat);
+  const v = ventasDeFin(sat);
+  const metas = JSON.parse(localStorage.getItem('sng_eq_metas') || '{}');
+  const key = isoDia(sat);
+  const calc = totalesEq();
+  const metaCalc = calc.total > 0 ? Math.ceil(calc.total / MARGEN_EQ) : 0;
+  const guardada = metas[key] != null;
+  const meta = guardada ? metas[key] : metaCalc;
+  const cont = document.getElementById('eq-progreso');
+  if(!meta){
+    cont.innerHTML = `<p style="font-size:12px;color:var(--muted);">Vendido este fin: <b style="color:var(--cream);">$${fmtEq(v.total)}</b> (${v.count} pedidos). Calcula arriba tu meta para ver el progreso.</p>`;
+    return;
+  }
+  const pct = meta > 0 ? Math.min(100, Math.round(v.total / meta * 100)) : 0;
+  const falta = Math.max(0, meta - v.total);
+  const pedidosMeta = Math.ceil(meta / TICKET_PROM);
+  cont.innerHTML = `
+    <div class="eq-barra"><div class="eq-barra-fill" style="width:${pct}%;"></div></div>
+    <div class="eq-prog-nums"><span>Vendido: <b>$${fmtEq(v.total)}</b> · ${v.count} ped.</span><span>${pct}%</span></div>
+    <div class="eq-prog-nums" style="margin-top:6px;"><span>Meta: <b>$${fmtEq(meta)}</b> · ~${pedidosMeta} ped.</span><span>${falta > 0 ? 'Faltan <b style="color:var(--amber);">$'+fmtEq(falta)+'</b>' : '<b style="color:var(--green);">✓ Meta cumplida</b>'}</span></div>
+    ${guardada ? '' : '<p style="font-size:10.5px;color:var(--muted);margin-top:6px;">Meta tomada del cálculo actual (aún no guardada para este fin).</p>'}`;
+}
+
+function navFinEq(delta){
+  const d = new Date(finSeleccionadoEq);
+  d.setDate(d.getDate() + delta * 7);
+  finSeleccionadoEq = d;
+  renderProgresoEq();
+  renderCalendarioEq();
+}
+
+function guardarMetaEq(){
+  const calc = totalesEq();
+  if(calc.total === 0){ mostrarAviso('Primero calcula la meta (inversión, gastos, etc.).', 'error'); return; }
+  const meta = Math.ceil(calc.total / MARGEN_EQ);
+  const metas = JSON.parse(localStorage.getItem('sng_eq_metas') || '{}');
+  metas[isoDia(finSeleccionadoEq)] = meta;
+  localStorage.setItem('sng_eq_metas', JSON.stringify(metas));
+  mostrarAviso('Meta guardada para ' + rangoFinTexto(finSeleccionadoEq) + '.', 'exito');
+  renderProgresoEq();
+  renderCalendarioEq();
+}
+
+function renderCalendarioEq(){
   const lista = document.getElementById('eq-hist-lista');
-  const hist = JSON.parse(localStorage.getItem('sng_eq_historial') || '[]');
-  if(!hist.length){ lista.innerHTML = '<p style="font-size:12px;color:var(--muted);">Sin registros aún.</p>'; return; }
-  lista.innerHTML = hist.map(r=> `
-    <div class="eq-hist-item">
-      <span>${r.fecha} · ${r.dias} día${r.dias>1?'s':''}</span>
-      <span>Meta: <span class="meta-v">$${fmtEq(r.ventasNec)}</span> · Inv: $${fmtEq(r.inversion)}</span>
-    </div>`).join('');
+  const metas = JSON.parse(localStorage.getItem('sng_eq_metas') || '{}');
+  const sats = {};
+  pedidosLocales.forEach(p=>{
+    const f = fechaDePedido(p);
+    if(f) sats[isoDia(sabadoDelFin(f))] = true;
+  });
+  Object.keys(metas).forEach(k=> sats[k] = true);
+  sats[isoDia(sabadoDelFin(new Date()))] = true;
+  if(finSeleccionadoEq) sats[isoDia(finSeleccionadoEq)] = true;
+  const keys = Object.keys(sats).sort().reverse().slice(0, 12);
+  lista.innerHTML = keys.map(k=>{
+    const [y, mo, da] = k.split('-').map(Number);
+    const sat = new Date(y, mo - 1, da);
+    const v = ventasDeFin(sat);
+    const meta = metas[k];
+    let der;
+    if(meta != null){
+      const falta = Math.max(0, meta - v.total);
+      der = `<span>$${fmtEq(v.total)} · ${v.count} ped. · ${falta > 0 ? '<span class="falta">falta $'+fmtEq(falta)+'</span>' : '<span class="ok">✓ meta</span>'}</span>`;
+    } else {
+      der = `<span><span class="meta-v">$${fmtEq(v.total)}</span> · ${v.count} ped.</span>`;
+    }
+    const actual = k === (finSeleccionadoEq ? isoDia(finSeleccionadoEq) : '');
+    return `<div class="eq-hist-item${actual ? ' actual' : ''}"><span>${rangoFinTexto(sat)}</span>${der}</div>`;
+  }).join('');
 }
 
 /* ============================================================
