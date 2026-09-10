@@ -283,7 +283,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--negro);color:v
       <p>Cuánto necesitas vender</p>
     </div>
   </div>
-  <div id="panel-config">
+  <div id="panel-config" style="display:none!important;">
     <h3>⚙️ Conectar Firebase</h3>
     <p>Solo se hace una vez. Ve a <strong>console.firebase.google.com</strong>, crea un proyecto, activa Firestore (modo prueba) y pega los datos de tu app web aquí.</p>
     <div class="cfg-row">
@@ -518,57 +518,41 @@ let trabajadores=[{nombre:'',pago:''}];
 // ══════════════════════════════════════════
 //  FIREBASE CONFIG PERSISTENCIA
 // ══════════════════════════════════════════
-function getCfg(){try{return JSON.parse(localStorage.getItem('sng_fbcfg')||'{}');}catch{return {};}}
-function setCfg(c){localStorage.setItem('sng_fbcfg',JSON.stringify(c));}
+const FIREBASE_CFG = {
+  apiKey:            "AIzaSyDuIgTBOj0iyxUcxCFbdJFU8DhkvSzLhps",
+  authDomain:        "sushi-ngada-hambre.firebaseapp.com",
+  projectId:         "sushi-ngada-hambre",
+  storageBucket:     "sushi-ngada-hambre.firebasestorage.app",
+  messagingSenderId: "138456530544",
+  appId:             "1:138456530544:web:0649e9dd8ceeba62fb3eb5"
+};
 
 // ══════════════════════════════════════════
 //  ENTRADA
 // ══════════════════════════════════════════
 function entrar(modo){
   modoApp=modo;
-  if(modo==='equilibrio'){
-    // Equilibrio no necesita Firebase
-    mostrarApp();
-    return;
-  }
-  const cfg=getCfg();
-  if(cfg.apiKey){
-    conectarFirebase(cfg);
-  } else {
-    document.getElementById('panel-config').style.display='block';
-    document.getElementById('panel-config').scrollIntoView({behavior:'smooth'});
-  }
-}
-
-function cerrarConfig(){
-  document.getElementById('panel-config').style.display='none';
-}
-
-function guardarConectar(){
-  const cfg={
-    apiKey:    document.getElementById('fb-apiKey').value.trim(),
-    projectId: document.getElementById('fb-projectId').value.trim(),
-    authDomain:document.getElementById('fb-authDomain').value.trim(),
-    appId:     document.getElementById('fb-appId').value.trim(),
-    storageBucket:'',messagingSenderId:''
-  };
-  const err=document.getElementById('config-error');
-  if(!cfg.apiKey||!cfg.projectId){err.style.display='block';err.textContent='API Key y Project ID son obligatorios.';return;}
-  err.style.display='none';
-  setCfg(cfg);
-  conectarFirebase(cfg);
+  if(modo==='equilibrio'){ mostrarApp(); return; }
+  conectarFirebase(FIREBASE_CFG);
 }
 
 function conectarFirebase(cfg){
-  try{
-    if(!firebase.apps.length) firebase.initializeApp(cfg);
-    db=firebase.firestore();
-    // Habilitar persistencia offline para celular
-    db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
-  }catch(e){
-    mostrarToast('Error Firebase: '+e.message,'rojo'); return;
+  function init(){
+    try{
+      if(typeof firebase === 'undefined'){ setTimeout(()=>conectarFirebase(cfg), 100); return; }
+      if(!firebase.apps.length) firebase.initializeApp(cfg);
+      db=firebase.firestore();
+      db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+      mostrarApp();
+    }catch(e){
+      mostrarToast('Error Firebase: '+e.message,'rojo');
+    }
   }
-  mostrarApp();
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 }
 
 function mostrarApp(){
@@ -1035,17 +1019,9 @@ function leerModoURL(){
 // Init
 window.addEventListener('DOMContentLoaded',()=>{
   // Entrada directa desde QR (?modo=cocina etc.)
-  if(leerModoURL()) return;
+  setTimeout(()=>{ if(leerModoURL()) return; }, 200);
 
-  const cfg=getCfg();
-  if(cfg.apiKey){
-    document.querySelectorAll('.selector-btn').forEach(btn=>{
-      const h=document.createElement('p');
-      h.style.cssText='font-size:.7rem;color:#4ECB80;margin-top:.3rem;';
-      h.textContent='✓ Firebase listo';
-      btn.appendChild(h);
-    });
-  }
+  // Firebase hardcodeado — no necesita indicador
 });
 </script>
 </body>
