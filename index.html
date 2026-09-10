@@ -540,9 +540,10 @@ function conectarFirebase(cfg){
   function init(){
     try{
       if(typeof firebase === 'undefined'){ setTimeout(()=>conectarFirebase(cfg), 100); return; }
-      if(!firebase.apps.length) firebase.initializeApp(cfg);
+      const esNuevo = !firebase.apps.length;
+      if(esNuevo) firebase.initializeApp(cfg);
       db=firebase.firestore();
-      db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+      if(esNuevo) db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
       mostrarApp();
     }catch(e){
       mostrarToast('Error Firebase: '+e.message,'rojo');
