@@ -214,6 +214,34 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
   .logo-inicio{width:100px;height:100px;}
   .roles{gap:12px;}
 }
+
+/* ---------- punto de equilibrio ---------- */
+.eq-seccion{margin-bottom:16px;}
+.eq-seccion h4{font-size:12.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--blue);margin:0 0 10px;font-family:'Work Sans';}
+.eq-campo{margin-bottom:10px;}
+.eq-campo label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:5px;}
+.eq-prefix{position:relative;}
+.eq-prefix span{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none;}
+.eq-prefix input{padding-left:24px;}
+.eq-campo input{width:100%;background:var(--bg-alt);border:1px solid var(--line);color:var(--cream);padding:10px 12px;border-radius:8px;font-size:14px;}
+.trab-row{display:flex;gap:8px;margin-bottom:8px;}
+.trab-row input{flex:1;min-width:0;background:var(--bg-alt);border:1px solid var(--line);color:var(--cream);padding:9px 10px;border-radius:8px;font-size:13.5px;}
+.trab-row input.pago{max-width:100px;}
+.trab-row .rm{width:34px;flex:none;background:var(--bg-alt);border:1px solid var(--line);color:var(--red);border-radius:8px;font-size:13px;cursor:pointer;}
+.eq-dias{display:flex;gap:8px;margin-top:4px;}
+.eq-dias button{flex:1;padding:9px;border-radius:8px;background:var(--bg-alt);border:1px solid var(--line);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;}
+.eq-dias button.sel{background:var(--blue);color:#08131c;border-color:var(--blue);}
+.eq-res{background:var(--bg-alt);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:14px;}
+.eq-res-linea{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:6px 0;border-bottom:1px dashed var(--line);color:var(--muted);}
+.eq-res-linea:last-child{border-bottom:none;}
+.eq-res-linea span:last-child{color:var(--cream);font-family:'Space Mono';white-space:nowrap;}
+.eq-res-linea.total{font-weight:700;font-size:14px;color:var(--cream);border-top:1px solid var(--line);margin-top:4px;padding-top:10px;}
+.eq-res-linea.meta{background:rgba(89,197,143,.12);border-radius:8px;padding:10px 12px;margin-top:8px;border-bottom:none;color:var(--cream);}
+.eq-res-linea.meta .val{color:var(--green);font-size:18px;font-weight:800;}
+.eq-hist{margin-top:16px;}
+.eq-hist h4{font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:0 0 8px;font-family:'Work Sans';}
+.eq-hist-item{display:flex;justify-content:space-between;gap:10px;background:var(--bg-alt);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:11.5px;color:var(--muted);}
+.eq-hist-item .meta-v{color:var(--green);font-weight:700;}
 </style>
 </head>
 <body>
@@ -310,6 +338,7 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:8px;">
         <span class="sala-code" id="mesero-sala-code">sala ------</span>
         <div class="estado-conexion"><span class="punto" id="mesero-punto"></span><span id="mesero-estado-txt">conectando…</span></div>
+        <button class="btn btn-fantasma" onclick="abrirEquilibrio()">📊 Equilibrio</button>
         <button class="btn btn-fantasma" onclick="mostrarConfigSheets()">⚙ Exportar</button>
         <button class="btn btn-fantasma" onclick="vincularOtroDispositivo()">🔗 Vincular</button>
         <button class="btn btn-fantasma" onclick="volverInicio()">Salir</button>
@@ -477,6 +506,59 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 
     <div class="fila-btns" style="margin-top:16px;">
       <button class="btn btn-fantasma btn-w" onclick="cerrarConfig()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL: PUNTO DE EQUILIBRIO ==================== -->
+<div class="overlay oculto" id="overlay-equilibrio">
+  <div class="modal">
+    <h3>📊 Punto de equilibrio</h3>
+    <p class="desc-item">Calcula cuánto necesitas vender el fin de semana para cubrir tus costos.</p>
+
+    <div class="eq-seccion">
+      <h4>💰 Inversión del fin de semana</h4>
+      <div class="eq-campo">
+        <label>Inversión en producto</label>
+        <div class="eq-prefix"><span>$</span><input type="number" id="eq-inversion" placeholder="0" oninput="calcularEq()"></div>
+      </div>
+      <div class="eq-campo">
+        <label>Otros gastos (gas, empaques, etc.)</label>
+        <div class="eq-prefix"><span>$</span><input type="number" id="eq-otros" placeholder="0" oninput="calcularEq()"></div>
+      </div>
+    </div>
+
+    <div class="eq-seccion">
+      <h4>👥 Trabajadores</h4>
+      <div id="eq-trab-lista"></div>
+      <button class="btn btn-fantasma" style="font-size:12px;padding:8px 14px;" onclick="agregarTrabajadorEq()">+ Agregar trabajador</button>
+    </div>
+
+    <div class="eq-seccion">
+      <h4>🏦 Ahorro</h4>
+      <div class="eq-campo">
+        <label>Ahorro por día trabajado</label>
+        <div class="eq-prefix"><span>$</span><input type="number" id="eq-ahorro-dia" value="600" oninput="calcularEq()"></div>
+      </div>
+      <div class="eq-campo">
+        <label>Días trabajados este fin de semana</label>
+        <div class="eq-dias">
+          <button id="eq-dias-1" onclick="selDiasEq(1)">1 día</button>
+          <button id="eq-dias-2" class="sel" onclick="selDiasEq(2)">2 días (sáb y dom)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="eq-res" id="eq-res"></div>
+
+    <div class="eq-hist">
+      <h4>🗂 Historial de fines de semana</h4>
+      <div id="eq-hist-lista"><p style="font-size:12px;color:var(--muted);">Sin registros aún.</p></div>
+    </div>
+
+    <div class="fila-btns" style="margin-top:16px;">
+      <button class="btn btn-verde" onclick="guardarHistorialEq()">Guardar en historial</button>
+      <button class="btn btn-fantasma" onclick="cerrarEquilibrio()">Cerrar</button>
     </div>
   </div>
 </div>
@@ -1486,6 +1568,102 @@ async function enviarAGoogleSheets(){
   }catch(e){
     mostrarAviso('No se pudo enviar a Google Sheets. Revisa la URL y tu conexión.', 'error');
   }
+}
+
+/* ============================================================
+   PUNTO DE EQUILIBRIO
+   ============================================================ */
+let trabajadoresEq = [];
+let diasSelEq = 2;
+
+function abrirEquilibrio(){
+  document.getElementById('overlay-equilibrio').classList.remove('oculto');
+  if(trabajadoresEq.length === 0) trabajadoresEq = [{nombre:'', pago:''}];
+  renderTrabajadoresEq();
+  cargarHistorialEq();
+  calcularEq();
+}
+function cerrarEquilibrio(){ document.getElementById('overlay-equilibrio').classList.add('oculto'); }
+
+function selDiasEq(n){
+  diasSelEq = n;
+  document.getElementById('eq-dias-1').classList.toggle('sel', n === 1);
+  document.getElementById('eq-dias-2').classList.toggle('sel', n === 2);
+  calcularEq();
+}
+
+function renderTrabajadoresEq(){
+  const lista = document.getElementById('eq-trab-lista');
+  lista.innerHTML = '';
+  trabajadoresEq.forEach((t, i)=>{
+    const row = document.createElement('div');
+    row.className = 'trab-row';
+    row.innerHTML = `
+      <input type="text" placeholder="Nombre" value="${t.nombre}">
+      <input type="number" class="pago" placeholder="Pago $" value="${t.pago}">
+      <button class="rm">✕</button>`;
+    const inputs = row.querySelectorAll('input');
+    inputs[0].oninput = ()=>{ trabajadoresEq[i].nombre = inputs[0].value; };
+    inputs[1].oninput = ()=>{ trabajadoresEq[i].pago = inputs[1].value; calcularEq(); };
+    row.querySelector('.rm').onclick = ()=>{ trabajadoresEq.splice(i, 1); renderTrabajadoresEq(); calcularEq(); };
+    lista.appendChild(row);
+  });
+}
+function agregarTrabajadorEq(){ trabajadoresEq.push({nombre:'', pago:''}); renderTrabajadoresEq(); }
+
+function fmtEq(n){ return Number(n).toLocaleString('es-MX'); }
+
+function totalesEq(){
+  const inversion = parseFloat(document.getElementById('eq-inversion').value) || 0;
+  const otros = parseFloat(document.getElementById('eq-otros').value) || 0;
+  const ahorroDia = parseFloat(document.getElementById('eq-ahorro-dia').value) || 0;
+  const nomina = trabajadoresEq.reduce((s, t)=> s + (parseFloat(t.pago) || 0), 0);
+  const ahorro = ahorroDia * diasSelEq;
+  return {inversion, otros, ahorroDia, nomina, ahorro, total: inversion + otros + nomina + ahorro};
+}
+
+function calcularEq(){
+  const t = totalesEq();
+  const res = document.getElementById('eq-res');
+  if(t.total === 0){ res.innerHTML = '<p style="font-size:12px;color:var(--muted);">Ingresa los datos para ver el cálculo.</p>'; return; }
+  const margen = 0.40;
+  const ventasNec = Math.ceil(t.total / margen);
+  const ticketProm = 130;
+  const pedidosNec = Math.ceil(ventasNec / ticketProm);
+  res.innerHTML = `
+    <div class="eq-res-linea"><span>Inversión en producto</span><span>$${fmtEq(t.inversion)}</span></div>
+    <div class="eq-res-linea"><span>Otros gastos</span><span>$${fmtEq(t.otros)}</span></div>
+    <div class="eq-res-linea"><span>Nómina total</span><span>$${fmtEq(t.nomina)}</span></div>
+    <div class="eq-res-linea"><span>Ahorro (${diasSelEq} día${diasSelEq>1?'s':''} × $${fmtEq(t.ahorroDia)})</span><span>$${fmtEq(t.ahorro)}</span></div>
+    <div class="eq-res-linea total"><span>Total de costos del fin de semana</span><span>$${fmtEq(t.total)}</span></div>
+    <div class="eq-res-linea meta"><span>🎯 Necesitas vender (margen 40%)</span><span class="val">$${fmtEq(ventasNec)}</span></div>
+    <div class="eq-res-linea"><span>📦 Aprox. pedidos (ticket ~$${ticketProm})</span><span>${pedidosNec} pedidos</span></div>
+    <div class="eq-res-linea"><span>📅 Por día (${diasSelEq} día${diasSelEq>1?'s':''})</span><span>$${fmtEq(Math.ceil(ventasNec/diasSelEq))} / día</span></div>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;">* Margen bruto estimado 40% sobre ventas. Ajusta la inversión real cada fin de semana.</p>`;
+}
+
+function guardarHistorialEq(){
+  const t = totalesEq();
+  if(t.total === 0){ mostrarAviso('Ingresa los datos primero.', 'error'); return; }
+  const ventasNec = Math.ceil(t.total / 0.40);
+  const fecha = new Date().toLocaleDateString('es-MX', {weekday:'short', day:'numeric', month:'short'});
+  const hist = JSON.parse(localStorage.getItem('sng_eq_historial') || '[]');
+  hist.unshift({fecha, inversion:t.inversion, total:t.total, ventasNec, dias:diasSelEq, ts:Date.now()});
+  if(hist.length > 20) hist.pop();
+  localStorage.setItem('sng_eq_historial', JSON.stringify(hist));
+  mostrarAviso('Guardado en historial.', 'exito');
+  cargarHistorialEq();
+}
+
+function cargarHistorialEq(){
+  const lista = document.getElementById('eq-hist-lista');
+  const hist = JSON.parse(localStorage.getItem('sng_eq_historial') || '[]');
+  if(!hist.length){ lista.innerHTML = '<p style="font-size:12px;color:var(--muted);">Sin registros aún.</p>'; return; }
+  lista.innerHTML = hist.map(r=> `
+    <div class="eq-hist-item">
+      <span>${r.fecha} · ${r.dias} día${r.dias>1?'s':''}</span>
+      <span>Meta: <span class="meta-v">$${fmtEq(r.ventasNec)}</span> · Inv: $${fmtEq(r.inversion)}</span>
+    </div>`).join('');
 }
 
 /* ============================================================
