@@ -271,11 +271,13 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .inv-faltantes-item{font-size:12.5px;color:var(--cream);padding:2px 0;}
 .inv-cat{margin-bottom:16px;}
 .inv-cat h4{font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--blue);margin:0 0 8px;font-family:'Work Sans';}
-.inv-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);}
+.inv-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);}
 .inv-item:last-child{border-bottom:none;}
-.inv-item input{width:18px;height:18px;accent-color:var(--green);flex:none;cursor:pointer;}
-.inv-item label{flex:1;font-size:13.5px;color:var(--muted);cursor:pointer;}
+.inv-item label{flex:1;font-size:13.5px;color:var(--muted);}
 .inv-item.falta label{color:var(--red);font-weight:700;}
+.inv-stepper{display:flex;align-items:center;gap:6px;flex:none;}
+.inv-stepper button{width:28px;height:28px;flex:none;border-radius:7px;background:var(--bg-alt);border:1px solid var(--line);color:var(--cream);font-size:16px;line-height:1;cursor:pointer;}
+.inv-stepper input{width:46px;text-align:center;background:var(--bg-alt);border:1px solid var(--line);color:var(--cream);border-radius:7px;padding:5px 2px;font-size:13px;font-family:'Space Mono';}
 </style>
 </head>
 <body>
@@ -632,7 +634,7 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 <div class="overlay oculto" id="overlay-inventario">
   <div class="modal">
     <h3>📦 Inventario</h3>
-    <p class="desc-item">Marca lo que SÍ tienes en existencia. Lo que dejes sin marcar se muestra como faltante.</p>
+    <p class="desc-item">Pon la cantidad que tienes de cada producto. Lo que quede en 0 se muestra como faltante.</p>
 
     <div class="inv-faltantes oculto" id="inv-faltantes-box">
       <h4>⚠ Faltan <span id="inv-faltantes-num">0</span> productos</h4>
@@ -1865,13 +1867,13 @@ const INVENTARIO = [
 ];
 
 function estadoInventario(){
-  return JSON.parse(localStorage.getItem('sng_inventario') || '{}');
+  return JSON.parse(localStorage.getItem('sng_inventario_v2') || '{}');
 }
 function guardarEstadoInventario(estado){
-  localStorage.setItem('sng_inventario', JSON.stringify(estado));
+  localStorage.setItem('sng_inventario_v2', JSON.stringify(estado));
 }
-function tenemosProducto(nombre, estado){
-  return estado[nombre] !== false; // sin marcar aún = se asume que sí hay
+function cantidadDe(nombre, estado){
+  return Number(estado[nombre]) || 0;
 }
 
 function abrirInventario(){
@@ -1879,6 +1881,17 @@ function abrirInventario(){
   renderInventario();
 }
 function cerrarInventario(){ document.getElementById('overlay-inventario').classList.add('oculto'); }
+
+function cambiarCantidadInventario(nombre, delta, item, input){
+  const est = estadoInventario();
+  const nueva = Math.max(0, cantidadDe(nombre, est) + delta);
+  est[nombre] = nueva;
+  guardarEstadoInventario(est);
+  input.value = nueva;
+  item.classList.toggle('falta', nueva <= 0);
+  renderFaltantesInventario();
+  actualizarBadgeInventario();
+}
 
 function renderInventario(){
   const estado = estadoInventario();
@@ -1889,16 +1902,25 @@ function renderInventario(){
     div.className = 'inv-cat';
     div.innerHTML = `<h4>${cat.categoria}</h4>`;
     cat.items.forEach(nombre=>{
-      const tiene = tenemosProducto(nombre, estado);
-      const id = 'inv-' + nombre.replace(/[^a-zA-Z0-9]/g, '-');
+      const cant = cantidadDe(nombre, estado);
       const item = document.createElement('div');
-      item.className = 'inv-item' + (tiene ? '' : ' falta');
-      item.innerHTML = `<input type="checkbox" id="${id}" ${tiene ? 'checked' : ''}><label for="${id}">${nombre}</label>`;
-      item.querySelector('input').onchange = (e)=>{
+      item.className = 'inv-item' + (cant <= 0 ? ' falta' : '');
+      item.innerHTML = `
+        <label>${nombre}</label>
+        <div class="inv-stepper">
+          <button class="menos">−</button>
+          <input type="number" min="0" value="${cant}">
+          <button class="mas">+</button>
+        </div>`;
+      const input = item.querySelector('input');
+      item.querySelector('.menos').onclick = ()=> cambiarCantidadInventario(nombre, -1, item, input);
+      item.querySelector('.mas').onclick = ()=> cambiarCantidadInventario(nombre, 1, item, input);
+      input.oninput = ()=>{
         const est = estadoInventario();
-        est[nombre] = e.target.checked;
+        const nueva = Math.max(0, parseInt(input.value) || 0);
+        est[nombre] = nueva;
         guardarEstadoInventario(est);
-        item.classList.toggle('falta', !e.target.checked);
+        item.classList.toggle('falta', nueva <= 0);
         renderFaltantesInventario();
         actualizarBadgeInventario();
       };
@@ -1913,7 +1935,7 @@ function listaFaltantesInventario(){
   const estado = estadoInventario();
   const faltan = [];
   INVENTARIO.forEach(cat=> cat.items.forEach(nombre=>{
-    if(!tenemosProducto(nombre, estado)) faltan.push(nombre);
+    if(cantidadDe(nombre, estado) <= 0) faltan.push(nombre);
   }));
   return faltan;
 }
