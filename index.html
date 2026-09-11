@@ -262,6 +262,20 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .inicio-extra .txt h3{font-size:16px;margin:0 0 4px;}
 .inicio-extra .txt p{color:var(--muted);font-size:12.5px;margin:0;line-height:1.45;}
 .inicio-extra .chevron{margin-left:auto;color:var(--blue);font-size:20px;flex:none;}
+.inicio-extra-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex:none;}
+.inv-badge{background:var(--red);color:#fff;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:800;white-space:nowrap;}
+
+/* ---------- inventario ---------- */
+.inv-faltantes{background:rgba(230,72,79,.1);border:1px solid var(--red-dim);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+.inv-faltantes h4{font-size:13px;color:var(--red);margin:0 0 8px;}
+.inv-faltantes-item{font-size:12.5px;color:var(--cream);padding:2px 0;}
+.inv-cat{margin-bottom:16px;}
+.inv-cat h4{font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--blue);margin:0 0 8px;font-family:'Work Sans';}
+.inv-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);}
+.inv-item:last-child{border-bottom:none;}
+.inv-item input{width:18px;height:18px;accent-color:var(--green);flex:none;cursor:pointer;}
+.inv-item label{flex:1;font-size:13.5px;color:var(--muted);cursor:pointer;}
+.inv-item.falta label{color:var(--red);font-weight:700;}
 </style>
 </head>
 <body>
@@ -313,7 +327,19 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
         <h3>Punto de equilibrio y ventas</h3>
         <p>Cuánto necesitas vender el fin de semana, cuánto llevas vendido, y el calendario de ventas por fin.</p>
       </div>
-      <div class="chevron">→</div>
+      <div class="inicio-extra-right"><div class="chevron">→</div></div>
+    </div>
+
+    <div class="inicio-extra" onclick="abrirInventario()">
+      <div class="icono">📦</div>
+      <div class="txt">
+        <h3>Inventario</h3>
+        <p>Marca qué tienes en existencia. Lo que falte, te lo señalamos aquí.</p>
+      </div>
+      <div class="inicio-extra-right">
+        <div class="inv-badge oculto" id="inv-badge">0 faltan</div>
+        <div class="chevron">→</div>
+      </div>
     </div>
 
     <button class="reset-link" onclick="reiniciarConfig()">Reiniciar configuración de este dispositivo</button>
@@ -602,6 +628,26 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
   </div>
 </div>
 
+<!-- ==================== MODAL: INVENTARIO ==================== -->
+<div class="overlay oculto" id="overlay-inventario">
+  <div class="modal">
+    <h3>📦 Inventario</h3>
+    <p class="desc-item">Marca lo que SÍ tienes en existencia. Lo que dejes sin marcar se muestra como faltante.</p>
+
+    <div class="inv-faltantes oculto" id="inv-faltantes-box">
+      <h4>⚠ Faltan <span id="inv-faltantes-num">0</span> productos</h4>
+      <div id="inv-faltantes-lista"></div>
+      <button class="btn btn-fantasma" style="font-size:12px;padding:8px 14px;margin-top:8px;" onclick="copiarFaltantesInventario()">📋 Copiar lista de faltantes</button>
+    </div>
+
+    <div id="inv-categorias"></div>
+
+    <div class="fila-btns" style="margin-top:16px;">
+      <button class="btn btn-fantasma btn-w" onclick="cerrarInventario()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    DATOS DEL MENÚ — Sushi'Ngada Hambre
@@ -810,6 +856,7 @@ function volverInicio(){
   detenerCamara();
   ocultarTodo();
   document.getElementById('pantalla-inicio').classList.remove('oculto');
+  actualizarBadgeInventario();
 }
 
 function reiniciarConfig(){
@@ -1802,6 +1849,100 @@ function renderCalendarioEq(){
     const actual = k === (finSeleccionadoEq ? isoDia(finSeleccionadoEq) : '');
     return `<div class="eq-hist-item${actual ? ' actual' : ''}"><span>${rangoFinTexto(sat)}</span>${der}</div>`;
   }).join('');
+}
+
+/* ============================================================
+   INVENTARIO
+   ============================================================ */
+const INVENTARIO = [
+  {categoria:'Insumos de cocina', items:['Arroz','Soya 1 lt','Alga','Aceite','Pollo 1/2 kg','Philadelphia','Camarón','Carne','Salsa de anguila','SC: queso crema','SC: chipotle','Azúcar 1 kg','Harina','Huevo']},
+  {categoria:'Frutas y verduras', items:['Pepino','Aguacate','Mango','Limón','Jamaica','Jalapeños']},
+  {categoria:'Botanas', items:['Chetos','Galletas saladas','Picafresas']},
+  {categoria:'Empaque y desechables', items:['Charolas negras 125 u','Bolsas 25 u','Servilletas','Litreros 25 u']},
+  {categoria:'Limpieza', items:['Jabón para trastes']},
+  {categoria:'Papelería', items:['Post its','Pluma']},
+  {categoria:'Otros', items:['Gas','Gasolina','Hielo bolsa grande','Saldo','Agua']}
+];
+
+function estadoInventario(){
+  return JSON.parse(localStorage.getItem('sng_inventario') || '{}');
+}
+function guardarEstadoInventario(estado){
+  localStorage.setItem('sng_inventario', JSON.stringify(estado));
+}
+function tenemosProducto(nombre, estado){
+  return estado[nombre] !== false; // sin marcar aún = se asume que sí hay
+}
+
+function abrirInventario(){
+  document.getElementById('overlay-inventario').classList.remove('oculto');
+  renderInventario();
+}
+function cerrarInventario(){ document.getElementById('overlay-inventario').classList.add('oculto'); }
+
+function renderInventario(){
+  const estado = estadoInventario();
+  const cont = document.getElementById('inv-categorias');
+  cont.innerHTML = '';
+  INVENTARIO.forEach(cat=>{
+    const div = document.createElement('div');
+    div.className = 'inv-cat';
+    div.innerHTML = `<h4>${cat.categoria}</h4>`;
+    cat.items.forEach(nombre=>{
+      const tiene = tenemosProducto(nombre, estado);
+      const id = 'inv-' + nombre.replace(/[^a-zA-Z0-9]/g, '-');
+      const item = document.createElement('div');
+      item.className = 'inv-item' + (tiene ? '' : ' falta');
+      item.innerHTML = `<input type="checkbox" id="${id}" ${tiene ? 'checked' : ''}><label for="${id}">${nombre}</label>`;
+      item.querySelector('input').onchange = (e)=>{
+        const est = estadoInventario();
+        est[nombre] = e.target.checked;
+        guardarEstadoInventario(est);
+        item.classList.toggle('falta', !e.target.checked);
+        renderFaltantesInventario();
+        actualizarBadgeInventario();
+      };
+      div.appendChild(item);
+    });
+    cont.appendChild(div);
+  });
+  renderFaltantesInventario();
+}
+
+function listaFaltantesInventario(){
+  const estado = estadoInventario();
+  const faltan = [];
+  INVENTARIO.forEach(cat=> cat.items.forEach(nombre=>{
+    if(!tenemosProducto(nombre, estado)) faltan.push(nombre);
+  }));
+  return faltan;
+}
+
+function renderFaltantesInventario(){
+  const faltan = listaFaltantesInventario();
+  const box = document.getElementById('inv-faltantes-box');
+  box.classList.toggle('oculto', faltan.length === 0);
+  document.getElementById('inv-faltantes-num').textContent = faltan.length;
+  document.getElementById('inv-faltantes-lista').innerHTML = faltan.map(f=> `<div class="inv-faltantes-item">• ${f}</div>`).join('');
+}
+
+function copiarFaltantesInventario(){
+  const faltan = listaFaltantesInventario();
+  if(!faltan.length){ mostrarAviso('No falta nada por comprar 🎉', 'exito'); return; }
+  const texto = 'Lista de compras:\n' + faltan.map(f=> '- ' + f).join('\n');
+  navigator.clipboard.writeText(texto).then(()=>{
+    mostrarAviso('Lista de faltantes copiada.', 'exito');
+  }).catch(()=>{
+    mostrarAviso('No se pudo copiar. Cópiala manualmente.', 'error');
+  });
+}
+
+function actualizarBadgeInventario(){
+  const badge = document.getElementById('inv-badge');
+  if(!badge) return;
+  const n = listaFaltantesInventario().length;
+  badge.classList.toggle('oculto', n === 0);
+  badge.textContent = n + (n === 1 ? ' falta' : ' faltan');
 }
 
 /* ============================================================
