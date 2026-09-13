@@ -835,12 +835,12 @@ async function guardarEstadoNube(estado){
   await db.ref('salas/' + SALA + '/estado').set(estado);
 }
 
-function marcarConexion(prefijo, ok){
+function marcarConexion(prefijo, ok, detalle){
   const punto = document.getElementById(prefijo+'-punto');
   const txt = document.getElementById(prefijo+'-estado-txt');
   if(!punto) return;
   punto.className = 'punto ' + (ok ? 'ok' : 'mal');
-  txt.textContent = ok ? 'conectado' : 'sin conexión';
+  txt.textContent = ok ? 'conectado' : ('sin conexión' + (detalle ? ': ' + detalle : ''));
 }
 
 /* ============================================================
@@ -1330,7 +1330,8 @@ async function refrescarHistorial(){
       cont.appendChild(div);
     });
   }catch(e){
-    marcarConexion('mesero', false);
+    console.error('refrescarHistorial error:', e);
+    marcarConexion('mesero', false, e && e.message ? e.message : String(e));
   }
 }
 
@@ -1525,7 +1526,8 @@ async function refrescarCocina(){
     ultimoConteoPedidos = activos.length;
     pintarCocina(activos);
   }catch(e){
-    marcarConexion('cocina', false);
+    console.error('refrescarCocina error:', e);
+    marcarConexion('cocina', false, e && e.message ? e.message : String(e));
   }
 }
 
