@@ -1211,7 +1211,7 @@ function renderTicket(){
       const metaPartes = [];
       if(linea.empanizadoPorRollo) metaPartes.push(textoEmpanizadoPorRollo(linea.empanizadoPorRollo));
       else if(linea.empanizado) metaPartes.push('Empanizado: ' + linea.empanizado);
-      if(linea.salsas.length) metaPartes.push('Salsas: ' + linea.salsas.join(', '));
+      if(linea.salsas && linea.salsas.length) metaPartes.push('Salsas: ' + linea.salsas.join(', '));
       if(linea.notas) metaPartes.push('Nota: ' + linea.notas);
       div.innerHTML = `
         <div class="top"><span>${linea.cantidad}× ${linea.nombre}</span><span>$${linea.precio*linea.cantidad}</span></div>
@@ -1288,7 +1288,7 @@ async function enviarComanda(){
 
     pedidosLocales.push({
       hora: pedido.hora, cliente,
-      itemsTexto: carrito.map(l=> `${l.cantidad}x ${l.nombre}${l.empanizadoPorRollo?' ('+textoEmpanizadoPorRollo(l.empanizadoPorRollo)+')':(l.empanizado?' ('+l.empanizado+')':'')}${l.salsas.length?' ['+l.salsas.join('/')+']':''}${l.notas?' - '+l.notas:''}`).join(' | '),
+      itemsTexto: carrito.map(l=> `${l.cantidad}x ${l.nombre}${l.empanizadoPorRollo?' ('+textoEmpanizadoPorRollo(l.empanizadoPorRollo)+')':(l.empanizado?' ('+l.empanizado+')':'')}${l.salsas && l.salsas.length?' ['+l.salsas.join('/')+']':''}${l.notas?' - '+l.notas:''}`).join(' | '),
       items: carrito.map(l=> ({nombre:l.nombre, categoria:l.categoria, empanizado:l.empanizado, empanizadoPorRollo:l.empanizadoPorRollo, precio:l.precio, cantidad:l.cantidad})),
       envio: envioMonto,
       total, estado:'pendiente', fecha: new Date().toLocaleDateString('es-MX'), ts: Date.now()
@@ -1568,7 +1568,7 @@ function pintarCocina(pedidos){
   pedidos.slice().reverse().forEach(p=>{
     const boleto = document.createElement('div');
     boleto.className = 'boleto estado-' + p.estado;
-    const itemsHtml = p.items.map(l=>{
+    const itemsHtml = (p.items || []).map(l=>{
       const tags = [];
       if(l.empanizadoPorRollo){
         Object.entries(l.empanizadoPorRollo).forEach(([rollo,emp])=>{
@@ -1577,9 +1577,9 @@ function pintarCocina(pedidos){
       } else if(l.empanizado){
         tags.push(`<span class="tag ${l.empanizado==='Flamin Hot'?'picante':''}">${l.empanizado}</span>`);
       }
-      l.salsas.forEach(s=> tags.push(`<span class="tag">${s}</span>`));
+      (l.salsas || []).forEach(s=> tags.push(`<span class="tag">${s}</span>`));
       if(l.notas) tags.push(`<span class="tag nota">⚠ ${l.notas}</span>`);
-      return `<div class="boleto-item"><div class="nombre">${l.cantidad}× ${l.nombre}</div><div class="tags">${tags.join('')}</div></div>`;
+      return `<div class="boleto-item"><div class="nombre">${l.cantidad||1}× ${l.nombre||'Producto'}</div><div class="tags">${tags.join('')}</div></div>`;
     }).join('');
 
     const siguienteEstado = {pendiente:'preparando', preparando:'listo', listo:'entregado'}[p.estado];
