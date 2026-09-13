@@ -145,6 +145,8 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 
 .historial{margin-top:26px;}
 .historial h3{font-size:17px;margin-bottom:10px;}
+.hist-dia{margin-bottom:16px;}
+.hist-dia-titulo{font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--blue);font-weight:700;margin:0 0 8px;}
 .hist-item{display:flex;justify-content:space-between;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:13px;}
 .badge{padding:4px 10px;border-radius:999px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
 .badge.pendiente{background:rgba(224,165,48,.18);color:var(--amber);}
@@ -435,7 +437,7 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
         <button class="btn btn-verde btn-w" id="btn-enviar-comanda" onclick="enviarComanda()">Enviar comanda a cocina 🔥</button>
 
         <div class="historial">
-          <h3>Pedidos de hoy</h3>
+          <h3>Pedidos</h3>
           <div id="historial-lista"><div class="vacio-msg">Aún no hay pedidos hoy.</div></div>
         </div>
       </div>
@@ -1310,27 +1312,49 @@ async function enviarComanda(){
   }
 }
 
+function seccionHistorialDia(titulo, pedidos){
+  const wrap = document.createElement('div');
+  wrap.className = 'hist-dia';
+  const tituloDiv = document.createElement('div');
+  tituloDiv.className = 'hist-dia-titulo';
+  tituloDiv.textContent = titulo;
+  wrap.appendChild(tituloDiv);
+  if(pedidos.length === 0){
+    wrap.innerHTML += '<div class="vacio-msg">Aún no hay pedidos.</div>';
+    return wrap;
+  }
+  pedidos.forEach(p=>{
+    const div = document.createElement('div');
+    div.className = 'hist-item';
+    div.style.cursor = 'pointer';
+    div.title = 'Toca para editar este pedido';
+    div.innerHTML = `<span>${p.hora} · ${p.cliente} · $${p.total}</span><span class="badge ${p.estado}">${p.estado}</span>`;
+    div.onclick = ()=> abrirEditarPedido(p.id);
+    wrap.appendChild(div);
+  });
+  return wrap;
+}
+
 async function refrescarHistorial(){
   try{
     const estado = await leerEstadoNube();
     marcarConexion('mesero', true);
-    const hoy = new Date().toLocaleDateString('es-MX');
-    const lista = (estado.pedidos || []).filter(p=> p.fecha === hoy).slice().reverse().slice(0,12);
+    const hoyDate = new Date();
+    const ayerDate = new Date(hoyDate); ayerDate.setDate(hoyDate.getDate() - 1);
+    const hoyStr = hoyDate.toLocaleDateString('es-MX');
+    const ayerStr = ayerDate.toLocaleDateString('es-MX');
+    const pedidosHoy = (estado.pedidos || []).filter(p=> p.fecha === hoyStr).slice().reverse();
+    const pedidosAyer = (estado.pedidos || []).filter(p=> p.fecha === ayerStr).slice().reverse();
+
+    const tituloHoy = 'Hoy · ' + hoyDate.toLocaleDateString('es-MX', {day:'numeric', month:'long'});
+    const tituloAyer = 'Ayer · ' + ayerDate.toLocaleDateString('es-MX', {day:'numeric', month:'long'});
+
     const cont = document.getElementById('historial-lista');
-    if(lista.length === 0){
-      cont.innerHTML = '<div class="vacio-msg">Aún no hay pedidos hoy.</div>';
-      return;
-    }
     cont.innerHTML = '';
-    lista.forEach(p=>{
-      const div = document.createElement('div');
-      div.className = 'hist-item';
-      div.style.cursor = 'pointer';
-      div.title = 'Toca para editar este pedido';
-      div.innerHTML = `<span>${p.hora} · ${p.cliente} · $${p.total}</span><span class="badge ${p.estado}">${p.estado}</span>`;
-      div.onclick = ()=> abrirEditarPedido(p.id);
-      cont.appendChild(div);
-    });
+    cont.appendChild(seccionHistorialDia(tituloHoy, pedidosHoy.slice(0, 20)));
+    if(pedidosAyer.length){
+      cont.appendChild(seccionHistorialDia(tituloAyer, pedidosAyer.slice(0, 12)));
+    }
   }catch(e){
     console.error('refrescarHistorial error:', e);
     marcarConexion('mesero', false, e && e.message ? e.message : String(e));
