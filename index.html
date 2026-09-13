@@ -1272,6 +1272,7 @@ async function enviarComanda(){
     const pedido = {
       id: 'P' + estado.contador,
       hora: new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'}),
+      fecha: new Date().toLocaleDateString('es-MX'),
       cliente,
       items: carrito,
       envio: envioMonto,
@@ -1313,7 +1314,8 @@ async function refrescarHistorial(){
   try{
     const estado = await leerEstadoNube();
     marcarConexion('mesero', true);
-    const lista = (estado.pedidos || []).slice().reverse().slice(0,12);
+    const hoy = new Date().toLocaleDateString('es-MX');
+    const lista = (estado.pedidos || []).filter(p=> p.fecha === hoy).slice().reverse().slice(0,12);
     const cont = document.getElementById('historial-lista');
     if(lista.length === 0){
       cont.innerHTML = '<div class="vacio-msg">Aún no hay pedidos hoy.</div>';
@@ -1517,7 +1519,8 @@ async function refrescarCocina(){
   try{
     const estado = await leerEstadoNube();
     marcarConexion('cocina', true);
-    const activos = (estado.pedidos || []).filter(p=> p.estado !== 'entregado');
+    const hoy = new Date().toLocaleDateString('es-MX');
+    const activos = (estado.pedidos || []).filter(p=> p.fecha === hoy && p.estado !== 'entregado');
     if(!primerCargaCocina && activos.length > ultimoConteoPedidos){
       pitar(); flashAlerta(); vibrarSiPosible(); flashTitulo(); anunciarPedidoNuevo();
       mostrarAviso('🔥 ¡Nuevo pedido recibido!', 'info');
