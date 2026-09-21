@@ -526,6 +526,12 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
     <div id="editar-items-lista"></div>
 
     <div class="campo">
+      <label>Agregar producto al pedido</label>
+      <select id="editar-agregar-select"></select>
+      <button class="btn btn-fantasma btn-w" style="margin-top:8px;font-size:12.5px;padding:9px;" onclick="agregarProductoAEdicion()">+ Agregar al pedido</button>
+    </div>
+
+    <div class="campo">
       <label>Costo de envío</label>
       <input type="number" id="editar-envio" min="0" oninput="actualizarTotalEdicion()">
     </div>
@@ -544,7 +550,8 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
   <div class="modal">
     <h3>Exportar pedidos</h3>
     <p class="desc-item">Descarga el corte del día en Excel, o configura el envío automático a Google Sheets.</p>
-    <button class="btn btn-verde btn-w" style="margin-bottom:18px;" onclick="exportarExcel()">⬇ Descargar Excel del día</button>
+    <button class="btn btn-verde btn-w" onclick="exportarExcel(0)">⬇ Descargar Excel de hoy</button>
+    <button class="btn btn-fantasma btn-w" style="margin-top:8px;margin-bottom:18px;" onclick="exportarExcel(1)">⬇ Descargar Excel de ayer</button>
 
     <div class="aviso">La sincronización entre el receptor de pedidos y cocina usa Firebase Realtime Database.</div>
 
@@ -710,6 +717,7 @@ const MENU = {
   }
 };
 const EMPANIZADOS = ['Normal','Flamin Hot','Coco'];
+const EMPANIZADOS_ROLLOS = ['Normal','Flamin Hot','Coco','Mitad y mitad'];
 const SALSAS = ['Salsa de anguila','Salsa de soya','Salsa soya-jalapeño-limón','Salsa chipotle','Salsa Siracha','Queso Amarillo'];
 
 const APPS_SCRIPT_CODE =
@@ -1092,10 +1100,11 @@ function abrirModalItem(categoriaKey, item){
   if(empanizable){
     const c = document.getElementById('chips-empanizado');
     c.innerHTML = '';
-    EMPANIZADOS.forEach(op=>{
+    const opcionesEmp = categoriaKey === 'rollos' ? EMPANIZADOS_ROLLOS : EMPANIZADOS;
+    opcionesEmp.forEach(op=>{
       const chip = document.createElement('div');
       chip.className = 'chip' + (op==='Normal' ? ' sel' : '');
-      chip.textContent = op;
+      chip.textContent = op === 'Mitad y mitad' ? 'Mitad y mitad (+$5)' : op;
       chip.onclick = ()=>{
         itemEnEdicion.empanizado = op;
         [...c.children].forEach(ch=>ch.classList.remove('sel'));
@@ -1176,22 +1185,36 @@ function cambiarCantidad(delta){
 function cerrarModalItem(){
   document.getElementById('overlay-item').classList.add('oculto');
   itemEnEdicion = null;
+  if(modoEdicionPedido){
+    modoEdicionPedido = false;
+    document.getElementById('overlay-editar-pedido').classList.remove('oculto');
+  }
 }
 function confirmarAgregarItem(){
   if(!itemEnEdicion) return;
   itemEnEdicion.notas = document.getElementById('input-notas').value.trim();
-  carrito.push({
+  let precioFinal = itemEnEdicion.item.precio;
+  if(itemEnEdicion.empanizado === 'Mitad y mitad') precioFinal += 5;
+  const nuevoItem = {
     nombre: itemEnEdicion.item.nombre,
     categoria: MENU[itemEnEdicion.categoriaKey].titulo,
-    precio: itemEnEdicion.item.precio,
+    precio: precioFinal,
     empanizado: itemEnEdicion.empanizado,
     empanizadoPorRollo: itemEnEdicion.empanizadoPorRollo,
     salsas: [...itemEnEdicion.salsas],
     notas: itemEnEdicion.notas,
     cantidad: itemEnEdicion.cantidad
-  });
-  cerrarModalItem();
-  renderTicket();
+  };
+  if(modoEdicionPedido && pedidoEnEdicion){
+    pedidoEnEdicion.items.push(nuevoItem);
+    cerrarModalItem();
+    renderEdicionItems();
+    mostrarAviso('Producto agregado. No olvides "Guardar cambios".', 'exito');
+  } else {
+    carrito.push(nuevoItem);
+    cerrarModalItem();
+    renderTicket();
+  }
 }
 
 /* ---------- ticket / carrito ---------- */
@@ -1363,6 +1386,34 @@ async function refrescarHistorial(){
 
 /* ---------- editar pedido ---------- */
 let pedidoEnEdicion = null;
+let modoEdicionPedido = false;
+
+function poblarSelectAgregarEdicion(){
+  const sel = document.getElementById('editar-agregar-select');
+  sel.innerHTML = '<option value="">Elige un producto…</option>';
+  Object.entries(MENU).forEach(([catKey, cat])=>{
+    const grupo = document.createElement('optgroup');
+    grupo.label = cat.titulo;
+    cat.items.forEach(item=>{
+      const opt = document.createElement('option');
+      opt.value = catKey + '|' + item.id;
+      opt.textContent = `${item.nombre} — $${item.precio}`;
+      grupo.appendChild(opt);
+    });
+    sel.appendChild(grupo);
+  });
+}
+
+function agregarProductoAEdicion(){
+  const val = document.getElementById('editar-agregar-select').value;
+  if(!val){ mostrarAviso('Elige un producto primero.', 'error'); return; }
+  const [catKey, itemId] = val.split('|');
+  const item = MENU[catKey].items.find(i=> i.id === itemId);
+  if(!item) return;
+  modoEdicionPedido = true;
+  document.getElementById('overlay-editar-pedido').classList.add('oculto');
+  abrirModalItem(catKey, item);
+}
 
 async function abrirEditarPedido(idPedido){
   try{
@@ -1375,6 +1426,7 @@ async function abrirEditarPedido(idPedido){
     document.getElementById('editar-folio-txt').textContent = `Folio ${p.id} · ${p.hora}`;
     document.getElementById('editar-cliente').value = p.cliente;
     document.getElementById('editar-envio').value = pedidoEnEdicion.envio || '';
+    poblarSelectAgregarEdicion();
     renderEdicionItems();
     document.getElementById('overlay-editar-pedido').classList.remove('oculto');
   }catch(e){
@@ -1632,10 +1684,31 @@ function guardarSheetsUrl(){
   mostrarAviso('URL guardada.', 'exito');
 }
 
-function exportarExcel(){
-  const hoy = new Date().toLocaleDateString('es-MX');
+function contarRollosVendidos(pedidos){
+  let total = 0;
+  pedidos.forEach(pedido=>{
+    const items = pedido.items && pedido.items.length ? pedido.items : [];
+    items.forEach(item=>{
+      if(item.categoria === 'Rollos'){
+        total += item.cantidad || 1;
+      } else if(item.categoria === 'Combos'){
+        const def = MENU.combos.items.find(c=> c.nombre === item.nombre);
+        const rollosDelCombo = def && def.rollos ? def.rollos.length : 0;
+        total += rollosDelCombo * (item.cantidad || 1);
+      }
+    });
+  });
+  return total;
+}
+
+function exportarExcel(offsetDias){
+  offsetDias = offsetDias || 0;
+  const fechaObjetivo = new Date();
+  fechaObjetivo.setDate(fechaObjetivo.getDate() - offsetDias);
+  const hoy = fechaObjetivo.toLocaleDateString('es-MX');
+  const etiquetaDia = offsetDias === 0 ? 'hoy' : (offsetDias === 1 ? 'ayer' : `del ${hoy}`);
   const pedidosHoy = pedidosLocales.filter(p=>p.fecha===hoy);
-  if(pedidosHoy.length === 0){ mostrarAviso('No hay pedidos registrados hoy en este dispositivo.', 'error'); return; }
+  if(pedidosHoy.length === 0){ mostrarAviso(`No hay pedidos registrados ${etiquetaDia} en este dispositivo.`, 'error'); return; }
 
   const filas = [];
   let totalBebidas = 0;
@@ -1662,15 +1735,20 @@ function exportarExcel(){
     });
   });
 
+  const totalRollos = contarRollosVendidos(pedidosHoy);
+  const bono = totalRollos >= 35 ? 50 : 0;
+
   filas.push({PERSONA:'', HORA:'', PRODUCTO:'', EMPANIZADO:'', PRECIO:'', BEBIDA:''});
   filas.push({PERSONA:'', HORA:'', PRODUCTO:'', EMPANIZADO:'', PRECIO: Number(totalBebidas.toFixed(2)), BEBIDA:'TOTAL BEBIDAS'});
   filas.push({PERSONA:'', HORA:'', PRODUCTO:'', EMPANIZADO:'', PRECIO: Number(totalGeneral.toFixed(2)), BEBIDA:'TOTAL GENERAL'});
+  filas.push({PERSONA:'', HORA:'', PRODUCTO:'', EMPANIZADO:'', PRECIO: totalRollos, BEBIDA:'TOTAL ROLLOS VENDIDOS (incluye rollos en combos)'});
+  filas.push({PERSONA:'', HORA:'', PRODUCTO:'', EMPANIZADO:'', PRECIO: bono, BEBIDA: bono > 0 ? `✅ BONO EMPANIZADO: $50 (${totalRollos} rollos, ≥35)` : `Sin bono: ${totalRollos} rollos, faltan ${35-totalRollos} para 35`});
 
   const ws = XLSX.utils.json_to_sheet(filas);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Pedidos');
   XLSX.writeFile(wb, `sushingada_pedidos_${hoy.replace(/\//g,'-')}.xlsx`);
-  mostrarAviso('Excel del día descargado.', 'exito');
+  mostrarAviso(`Excel de ${etiquetaDia} descargado.`, 'exito');
 }
 
 async function enviarAGoogleSheets(){
