@@ -704,7 +704,7 @@ const MENU = {
       {id:'k1', nombre:'Combo Ele', precio:150, desc:'1 Rollo Vianey + 2 dedos de queso + agua de jamaica.', rollos:['Vianey']},
       {id:'k2', nombre:'Combo Chuy', precio:215, desc:'1 Rollo Edson + 1 Rollo Vianey + 1L agua de limón.', rollos:['Edson','Vianey']},
       {id:'k3', nombre:'Combo Saúl', precio:250, desc:'1 Rollo Edson + 1 Rollo Vianey + 2 dedos de surimi + 1L agua de jamaica.', rollos:['Edson','Vianey']},
-      {id:'k4', nombre:'Combo Aldo', precio:300, desc:'2 Bolas Arely + 4 dedos de Surimi.', rollos:[]},
+      {id:'k4', nombre:'Combo Aldo', precio:300, desc:'2 Bolas Arely + 4 dedos de Surimi.', rollos:[], bolas:2},
     ]
   },
   bebidas: {
@@ -1689,12 +1689,12 @@ function contarRollosVendidos(pedidos){
   pedidos.forEach(pedido=>{
     const items = pedido.items && pedido.items.length ? pedido.items : [];
     items.forEach(item=>{
-      if(item.categoria === 'Rollos'){
+      if(item.categoria === 'Rollos' || item.categoria === 'Bolas de Arroz'){
         total += item.cantidad || 1;
       } else if(item.categoria === 'Combos'){
         const def = MENU.combos.items.find(c=> c.nombre === item.nombre);
-        const rollosDelCombo = def && def.rollos ? def.rollos.length : 0;
-        total += rollosDelCombo * (item.cantidad || 1);
+        const piezasDelCombo = (def && def.rollos ? def.rollos.length : 0) + (def && def.bolas ? def.bolas : 0);
+        total += piezasDelCombo * (item.cantidad || 1);
       }
     });
   });
@@ -1741,8 +1741,8 @@ function exportarExcel(offsetDias){
   filas.push({PERSONA:'', HORA:'', PRODUCTO:'', EMPANIZADO:'', PRECIO:'', BEBIDA:''});
   filas.push({PERSONA:'', HORA:'', PRODUCTO:'', EMPANIZADO:'', PRECIO: Number(totalBebidas.toFixed(2)), BEBIDA:'TOTAL BEBIDAS'});
   filas.push({PERSONA:'', HORA:'', PRODUCTO:'', EMPANIZADO:'', PRECIO: Number(totalGeneral.toFixed(2)), BEBIDA:'TOTAL GENERAL'});
-  filas.push({PERSONA:'', HORA:'', PRODUCTO:'', EMPANIZADO:'', PRECIO: totalRollos, BEBIDA:'TOTAL ROLLOS VENDIDOS (incluye rollos en combos)'});
-  filas.push({PERSONA:'', HORA:'', PRODUCTO:'', EMPANIZADO:'', PRECIO: bono, BEBIDA: bono > 0 ? `✅ BONO EMPANIZADO: $50 (${totalRollos} rollos, ≥35)` : `Sin bono: ${totalRollos} rollos, faltan ${35-totalRollos} para 35`});
+  filas.push({PERSONA:'', HORA:'', PRODUCTO:'', EMPANIZADO:'', PRECIO: totalRollos, BEBIDA:'TOTAL ROLLOS Y BOLAS VENDIDOS (incluye combos)'});
+  filas.push({PERSONA:'', HORA:'', PRODUCTO:'', EMPANIZADO:'', PRECIO: bono, BEBIDA: bono > 0 ? `✅ BONO EMPANIZADO: $50 (${totalRollos} piezas, ≥35)` : `Sin bono: ${totalRollos} piezas, faltan ${35-totalRollos} para 35`});
 
   const ws = XLSX.utils.json_to_sheet(filas);
   const wb = XLSX.utils.book_new();
