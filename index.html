@@ -190,6 +190,7 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .boleto-body{padding:16px 18px;}
 .boleto-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;border-bottom:1px dashed var(--line);padding-bottom:10px;}
 .boleto-num{font-size:11px;color:var(--muted);}
+.boleto-num .corregido{color:var(--amber);font-weight:700;}
 .boleto-cliente{font-family:'Anton';text-transform:uppercase;font-size:18px;letter-spacing:.3px;}
 .boleto-hora{font-size:11px;color:var(--muted);text-align:right;}
 .boleto-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;font-size:13px;}
@@ -755,6 +756,7 @@ let itemEnEdicion = null; // {categoria, item, empanizado, salsas:[], notas, can
 let pollTimer = null;
 let pollTimerPareo = null;
 let ultimoConteoPedidos = 0;
+let edicionesVistas = {};   // id de pedido -> marca de tiempo de su última corrección vista en cocina
 let pedidosLocales = JSON.parse(localStorage.getItem('sng_orders_local') || '[]');
 
 let audioCtx = null;
@@ -1610,6 +1612,18 @@ function cerrarEditarPedido(){
   edicionLineaAbierta = null;
 }
 
+// forma canónica para comparar: llaves ordenadas, sin listas vacías ni valores nulos
+// (Firebase no guarda listas vacías, así que {salsas:[]} y sin "salsas" deben ser iguales)
+function canonico(v){
+  if(Array.isArray(v)){ const a = v.map(canonico); return a.length ? a : undefined; }
+  if(v && typeof v === 'object'){
+    const o = {};
+    Object.keys(v).sort().forEach(k=>{ const c = canonico(v[k]); if(c !== undefined && c !== null) o[k] = c; });
+    return Object.keys(o).length ? o : undefined;
+  }
+  return v;
+}
+
 async function guardarEdicionPedido(){
   if(!pedidoEnEdicion) return;
   const cliente = document.getElementById('editar-cliente').value.trim();
@@ -1621,10 +1635,13 @@ async function guardarEdicionPedido(){
     const estado = await leerEstadoNube();
     const idx = (estado.pedidos || []).findIndex(x=> x.id === pedidoEnEdicion.id);
     if(idx === -1){ mostrarAviso('El pedido ya no existe en la nube.', 'error'); return; }
+    const firma = o=> JSON.stringify(canonico({cliente:o.cliente, items:o.items || [], envio:o.envio || 0, total:o.total}));
+    const hayCambios = firma(estado.pedidos[idx]) !== firma({cliente, items:pedidoEnEdicion.items, envio, total});
     estado.pedidos[idx].cliente = cliente;
     estado.pedidos[idx].items = pedidoEnEdicion.items;
     estado.pedidos[idx].envio = envio;
     estado.pedidos[idx].total = total;
+    if(hayCambios) estado.pedidos[idx].editadoTs = Date.now();
     await guardarEstadoNube(estado);
 
     // mantener el registro local (usado por el Excel) igual a lo editado
@@ -1673,6 +1690,7 @@ function irACocina(){
   document.getElementById('cocina-sala-code').textContent = 'sala ' + SALA;
   ultimoConteoPedidos = 0;
   primerCargaCocina = true;
+  edicionesVistas = {};
   document.getElementById('banner-audio').classList.toggle('oculto', audioDesbloqueado);
   refrescarCocina();
   if(pollTimer) clearInterval(pollTimer);
@@ -1699,6 +1717,19 @@ function anunciarPedidoNuevo(){
     if(!('speechSynthesis' in window)) return;
     speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance('Pedido nuevo');
+    utter.lang = 'es-MX';
+    utter.rate = 1;
+    utter.volume = 1;
+    speechSynthesis.speak(utter);
+  }catch(e){}
+}
+
+// se encola después de cualquier aviso en curso (no lo cancela)
+function anunciarPedidoCorregido(){
+  if(!document.getElementById('chk-sonido').checked) return;
+  try{
+    if(!('speechSynthesis' in window)) return;
+    const utter = new SpeechSynthesisUtterance('Pedido corregido, Panchito y Eli');
     utter.lang = 'es-MX';
     utter.rate = 1;
     utter.volume = 1;
@@ -1751,6 +1782,19 @@ async function refrescarCocina(){
       pitar(); flashAlerta(); vibrarSiPosible(); flashTitulo(); anunciarPedidoNuevo();
       mostrarAviso('🔥 ¡Nuevo pedido recibido!', 'info');
     }
+
+    // pedidos corregidos desde el receptor de pedidos
+    const corregidos = [];
+    activos.forEach(p=>{
+      const ts = p.editadoTs || 0;
+      const previo = edicionesVistas[p.id];
+      if(!primerCargaCocina && previo !== undefined && ts && ts !== previo) corregidos.push(p);
+      edicionesVistas[p.id] = ts;
+    });
+    if(corregidos.length){
+      pitar(); flashAlerta(); vibrarSiPosible(); anunciarPedidoCorregido();
+      mostrarAviso('✏️ Pedido corregido: ' + corregidos.map(p=> p.cliente).join(', '), 'info', 7000);
+    }
     primerCargaCocina = false;
     ultimoConteoPedidos = activos.length;
     pintarCocina(activos);
@@ -1791,7 +1835,7 @@ function pintarCocina(pedidos){
       <div class="franja"></div>
       <div class="boleto-body">
         <div class="boleto-head">
-          <div><div class="boleto-cliente">${p.cliente}</div><div class="boleto-num">${p.id}</div></div>
+          <div><div class="boleto-cliente">${p.cliente}</div><div class="boleto-num">${p.id}${p.editadoTs ? ' · <span class="corregido">✏️ CORREGIDO</span>' : ''}</div></div>
           <div class="boleto-hora">${p.hora}<br>$${p.total}</div>
         </div>
         ${itemsHtml}
