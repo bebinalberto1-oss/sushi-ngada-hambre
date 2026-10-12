@@ -76,6 +76,10 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .punto{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none;transition:background .2s;}
 .punto.ok{background:var(--green);box-shadow:0 0 8px var(--green);}
 .punto.mal{background:var(--red);box-shadow:0 0 8px var(--red);}
+.rollos-hoy{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:13px;color:var(--muted);white-space:nowrap;}
+.rollos-hoy b{color:var(--cream);font-family:'Space Mono',monospace;font-size:17px;}
+.rollos-hoy.meta{border-color:var(--green);color:var(--green);}
+.rollos-hoy.meta b{color:var(--green);}
 .sala-code{font-family:'Space Mono',monospace;background:var(--panel);border:1px dashed var(--line);padding:4px 10px;border-radius:6px;font-size:12px;color:var(--blue);}
 
 /* ---------- inicio / seleccion de rol ---------- */
@@ -142,6 +146,11 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .ticket-linea .top{display:flex;justify-content:space-between;font-size:13.5px;font-weight:700;}
 .ticket-linea .meta{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5;}
 .ticket-linea .quitar{color:var(--red);font-size:11px;text-decoration:underline;background:none;margin-top:6px;}
+.acciones-linea{display:flex;gap:16px;align-items:center;flex-wrap:wrap;}
+.ticket-linea .editar-linea{color:var(--blue);font-size:11.5px;text-decoration:underline;background:none;margin-top:6px;cursor:pointer;}
+.editor-linea{margin-top:10px;padding:12px;background:var(--bg-alt);border:1px solid var(--line);border-radius:10px;}
+.editor-linea .campo{margin-bottom:10px;}
+.editor-linea .campo:last-child{margin-bottom:0;}
 .ticket-total{display:flex;justify-content:space-between;font-family:'Space Mono';font-size:19px;font-weight:700;padding:14px 0;border-top:1px solid var(--line);margin-top:6px;}
 .vacio-msg{color:var(--muted);font-size:13px;text-align:center;padding:20px 0;}
 
@@ -183,10 +192,12 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .boleto-num{font-size:11px;color:var(--muted);}
 .boleto-cliente{font-family:'Anton';text-transform:uppercase;font-size:18px;letter-spacing:.3px;}
 .boleto-hora{font-size:11px;color:var(--muted);text-align:right;}
-.boleto-item{margin-bottom:10px;font-size:13px;}
-.boleto-item .nombre{font-weight:700;color:var(--cream);}
-.boleto-item .tags{margin-top:3px;display:flex;gap:5px;flex-wrap:wrap;}
-.tag{font-size:10px;padding:2px 7px;border-radius:5px;background:var(--bg-alt);border:1px solid var(--line);color:var(--muted);}
+.boleto-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;font-size:13px;}
+.boleto-item .cant{flex:none;min-width:58px;text-align:center;font-family:'Anton',sans-serif;font-size:36px;line-height:1;color:var(--amber);background:var(--bg-alt);border:1px solid var(--line);border-radius:10px;padding:8px 6px;}
+.boleto-item .info{flex:1;min-width:0;}
+.boleto-item .nombre{font-weight:800;color:var(--cream);font-size:18px;line-height:1.2;}
+.boleto-item .tags{margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;}
+.tag{font-size:12px;padding:3px 8px;border-radius:5px;background:var(--bg-alt);border:1px solid var(--line);color:var(--muted);}
 .tag.picante{color:var(--red);border-color:var(--red-dim);}
 .tag.nota{color:var(--amber);border-color:var(--amber);}
 .boleto-foot{display:flex;gap:8px;margin-top:14px;}
@@ -400,6 +411,7 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:8px;">
         <span class="sala-code" id="mesero-sala-code">sala ------</span>
         <div class="estado-conexion"><span class="punto" id="mesero-punto"></span><span id="mesero-estado-txt">conectando…</span></div>
+        <div class="rollos-hoy" id="rollos-hoy" title="Rollos vendidos hoy (incluye bolas y los rollos que van en combos). Bono a partir de 35.">🍣 <b id="rollos-hoy-num">—</b> / 35 rollos hoy</div>
         <button class="btn btn-fantasma" onclick="mostrarConfigSheets()">⚙ Exportar</button>
         <button class="btn btn-fantasma" onclick="vincularOtroDispositivo()">🔗 Vincular</button>
         <button class="btn btn-fantasma" onclick="volverInicio()">Salir</button>
@@ -718,8 +730,8 @@ const MENU = {
     ]
   }
 };
-const EMPANIZADOS = ['Normal','Flamin Hot','Coco'];
-const EMPANIZADOS_ROLLOS = ['Normal','Flamin Hot','Coco','Mitad y mitad'];
+const EMPANIZADOS = ['Normal','Flamin Hot','Coco','Natural'];
+const EMPANIZADOS_ROLLOS = ['Normal','Flamin Hot','Coco','Natural','Mitad y mitad'];
 const SALSAS = ['Salsa de anguila','Salsa de soya','Salsa soya-jalapeño-limón','Salsa chipotle','Salsa Siracha','Queso Amarillo'];
 
 const APPS_SCRIPT_CODE =
@@ -1279,6 +1291,13 @@ function reiniciarEnvio(){
   [...document.getElementById('chips-envio').children].forEach(c=>c.classList.remove('sel'));
 }
 
+function textoItemsLocal(items){
+  return items.map(l=> `${l.cantidad}x ${l.nombre}${l.empanizadoPorRollo?' ('+textoEmpanizadoPorRollo(l.empanizadoPorRollo)+')':(l.empanizado?' ('+l.empanizado+')':'')}${l.salsas && l.salsas.length?' ['+l.salsas.join('/')+']':''}${l.notas?' - '+l.notas:''}`).join(' | ');
+}
+function itemsParaLocal(items){
+  return items.map(l=> ({nombre:l.nombre, categoria:l.categoria, empanizado:l.empanizado, empanizadoPorRollo:l.empanizadoPorRollo, precio:l.precio, cantidad:l.cantidad}));
+}
+
 async function enviarComanda(){
   const cliente = document.getElementById('input-cliente').value.trim();
   if(!cliente){ mostrarAviso('Escribe el nombre del cliente o mesa.', 'error'); return; }
@@ -1312,11 +1331,12 @@ async function enviarComanda(){
     marcarConexion('mesero', true);
 
     pedidosLocales.push({
+      id: pedido.id,
       hora: pedido.hora, cliente,
-      itemsTexto: carrito.map(l=> `${l.cantidad}x ${l.nombre}${l.empanizadoPorRollo?' ('+textoEmpanizadoPorRollo(l.empanizadoPorRollo)+')':(l.empanizado?' ('+l.empanizado+')':'')}${l.salsas && l.salsas.length?' ['+l.salsas.join('/')+']':''}${l.notas?' - '+l.notas:''}`).join(' | '),
-      items: carrito.map(l=> ({nombre:l.nombre, categoria:l.categoria, empanizado:l.empanizado, empanizadoPorRollo:l.empanizadoPorRollo, precio:l.precio, cantidad:l.cantidad})),
+      itemsTexto: textoItemsLocal(carrito),
+      items: itemsParaLocal(carrito),
       envio: envioMonto,
-      total, estado:'pendiente', fecha: new Date().toLocaleDateString('es-MX'), ts: Date.now()
+      total, estado:'pendiente', fecha: pedido.fecha, ts: Date.now()
     });
     localStorage.setItem('sng_orders_local', JSON.stringify(pedidosLocales));
 
@@ -1335,6 +1355,14 @@ async function enviarComanda(){
     btn.style.opacity = '';
     btn.textContent = textoOriginal;
   }
+}
+
+function actualizarContadorRollos(n){
+  const num = document.getElementById('rollos-hoy-num');
+  const caja = document.getElementById('rollos-hoy');
+  if(!num || !caja) return;
+  num.textContent = n;
+  caja.classList.toggle('meta', n >= 35);
 }
 
 function seccionHistorialDia(titulo, pedidos){
@@ -1370,6 +1398,7 @@ async function refrescarHistorial(){
     const ayerStr = ayerDate.toLocaleDateString('es-MX');
     const pedidosHoy = (estado.pedidos || []).filter(p=> p.fecha === hoyStr).slice().reverse();
     const pedidosAyer = (estado.pedidos || []).filter(p=> p.fecha === ayerStr).slice().reverse();
+    actualizarContadorRollos(contarRollosVendidos(pedidosHoy));
 
     const tituloHoy = 'Hoy · ' + hoyDate.toLocaleDateString('es-MX', {day:'numeric', month:'long'});
     const tituloAyer = 'Ayer · ' + ayerDate.toLocaleDateString('es-MX', {day:'numeric', month:'long'});
@@ -1429,11 +1458,110 @@ async function abrirEditarPedido(idPedido){
     document.getElementById('editar-cliente').value = p.cliente;
     document.getElementById('editar-envio').value = pedidoEnEdicion.envio || '';
     poblarSelectAgregarEdicion();
+    edicionLineaAbierta = null;
     renderEdicionItems();
     document.getElementById('overlay-editar-pedido').classList.remove('oculto');
   }catch(e){
     mostrarAviso('No se pudo cargar el pedido para editar.', 'error');
   }
+}
+
+let edicionLineaAbierta = null;
+
+function defDeLinea(linea){
+  const entrada = Object.entries(MENU).find(([k, c])=> c.titulo === linea.categoria);
+  if(!entrada) return null;
+  const [catKey, cat] = entrada;
+  const item = cat.items.find(i=> i.nombre === linea.nombre) || null;
+  return {catKey, cat, item};
+}
+
+function lineaEsEditable(linea){
+  const def = defDeLinea(linea);
+  if(!def) return false;
+  const tieneRollos = def.item && def.item.rollos && def.item.rollos.length > 0;
+  const fijo = def.item && def.item.empanizadoFijo;
+  return tieneRollos || (def.cat.empanizable && !fijo) || def.cat.salsasMax > 0;
+}
+
+function grupoChipsEdicion(etiqueta, opciones, actual, onPick, nombresChip){
+  const campo = document.createElement('div');
+  campo.className = 'campo';
+  const lab = document.createElement('label');
+  lab.textContent = etiqueta;
+  const grupo = document.createElement('div');
+  grupo.className = 'chip-grupo';
+  opciones.forEach(op=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (op === actual ? ' sel' : '');
+    chip.textContent = (nombresChip && nombresChip[op]) || op;
+    chip.onclick = ()=> onPick(op);
+    grupo.appendChild(chip);
+  });
+  campo.appendChild(lab);
+  campo.appendChild(grupo);
+  return campo;
+}
+
+function construirEditorLinea(linea){
+  const panel = document.createElement('div');
+  panel.className = 'editor-linea';
+  const def = defDeLinea(linea);
+  if(!def) return panel;
+  const {catKey, cat, item} = def;
+
+  const rollosCombo = item && item.rollos && item.rollos.length ? item.rollos : null;
+  if(rollosCombo){
+    rollosCombo.forEach(rollo=>{
+      const actual = linea.empanizadoPorRollo ? linea.empanizadoPorRollo[rollo] : null;
+      panel.appendChild(grupoChipsEdicion('Empanizado — Rollo ' + rollo, EMPANIZADOS, actual, op=>{
+        linea.empanizadoPorRollo = linea.empanizadoPorRollo || {};
+        linea.empanizadoPorRollo[rollo] = op;
+        renderEdicionItems();
+      }));
+    });
+  } else if(cat.empanizable && !(item && item.empanizadoFijo)){
+    const opciones = catKey === 'rollos' ? EMPANIZADOS_ROLLOS : EMPANIZADOS;
+    panel.appendChild(grupoChipsEdicion('Empanizado', opciones, linea.empanizado, op=>{
+      const eraMitad = linea.empanizado === 'Mitad y mitad';
+      const esMitad = op === 'Mitad y mitad';
+      if(esMitad && !eraMitad) linea.precio += 5;
+      if(!esMitad && eraMitad) linea.precio -= 5;
+      linea.empanizado = op;
+      renderEdicionItems();
+    }, {'Mitad y mitad': 'Mitad y mitad (+$5)'}));
+  }
+
+  if(cat.salsasMax > 0){
+    linea.salsas = linea.salsas || [];
+    const campo = document.createElement('div');
+    campo.className = 'campo';
+    const lab = document.createElement('label');
+    lab.textContent = `Salsas (máx. ${cat.salsasMax})`;
+    const grupo = document.createElement('div');
+    grupo.className = 'chip-grupo';
+    const lleno = linea.salsas.length >= cat.salsasMax;
+    SALSAS.forEach(s=>{
+      const sel = linea.salsas.includes(s);
+      const chip = document.createElement('div');
+      chip.className = 'chip' + (sel ? ' sel' : '') + (lleno && !sel ? ' deshabilitado' : '');
+      chip.textContent = s;
+      chip.onclick = ()=>{
+        const i = linea.salsas.indexOf(s);
+        if(i >= 0) linea.salsas.splice(i, 1);
+        else {
+          if(linea.salsas.length >= cat.salsasMax) return;
+          linea.salsas.push(s);
+        }
+        renderEdicionItems();
+      };
+      grupo.appendChild(chip);
+    });
+    campo.appendChild(lab);
+    campo.appendChild(grupo);
+    panel.appendChild(campo);
+  }
+  return panel;
 }
 
 function renderEdicionItems(){
@@ -1450,11 +1578,19 @@ function renderEdicionItems(){
       else if(linea.empanizado) metaPartes.push('Empanizado: ' + linea.empanizado);
       if(linea.salsas && linea.salsas.length) metaPartes.push('Salsas: ' + linea.salsas.join(', '));
       if(linea.notas) metaPartes.push('Nota: ' + linea.notas);
+      const abierta = edicionLineaAbierta === idx;
+      const editable = lineaEsEditable(linea);
       div.innerHTML = `
         <div class="top"><span>${linea.cantidad}× ${linea.nombre}</span><span>$${linea.precio*linea.cantidad}</span></div>
         <div class="meta">${metaPartes.join(' · ') || 'Sin personalización'}</div>
-        <button class="quitar">Quitar</button>`;
-      div.querySelector('.quitar').onclick = ()=>{ pedidoEnEdicion.items.splice(idx,1); renderEdicionItems(); };
+        <div class="acciones-linea">
+          ${editable ? `<button class="editar-linea">${abierta ? '▲ Cerrar edición' : '✏️ Editar empanizado / salsas'}</button>` : ''}
+          <button class="quitar">Quitar</button>
+        </div>`;
+      const btnEditar = div.querySelector('.editar-linea');
+      if(btnEditar) btnEditar.onclick = ()=>{ edicionLineaAbierta = abierta ? null : idx; renderEdicionItems(); };
+      div.querySelector('.quitar').onclick = ()=>{ pedidoEnEdicion.items.splice(idx,1); edicionLineaAbierta = null; renderEdicionItems(); };
+      if(abierta && editable) div.appendChild(construirEditorLinea(linea));
       cont.appendChild(div);
     });
   }
@@ -1471,6 +1607,7 @@ function actualizarTotalEdicion(){
 function cerrarEditarPedido(){
   document.getElementById('overlay-editar-pedido').classList.add('oculto');
   pedidoEnEdicion = null;
+  edicionLineaAbierta = null;
 }
 
 async function guardarEdicionPedido(){
@@ -1489,6 +1626,17 @@ async function guardarEdicionPedido(){
     estado.pedidos[idx].envio = envio;
     estado.pedidos[idx].total = total;
     await guardarEstadoNube(estado);
+
+    // mantener el registro local (usado por el Excel) igual a lo editado
+    const local = pedidosLocales.find(x=> x.id === pedidoEnEdicion.id && x.fecha === estado.pedidos[idx].fecha);
+    if(local){
+      local.cliente = cliente;
+      local.items = itemsParaLocal(pedidoEnEdicion.items);
+      local.itemsTexto = textoItemsLocal(pedidoEnEdicion.items);
+      local.envio = envio;
+      local.total = total;
+      localStorage.setItem('sng_orders_local', JSON.stringify(pedidosLocales));
+    }
     cerrarEditarPedido();
     refrescarHistorial();
     mostrarAviso('Pedido actualizado.', 'exito');
@@ -1633,7 +1781,7 @@ function pintarCocina(pedidos){
       }
       (l.salsas || []).forEach(s=> tags.push(`<span class="tag">${s}</span>`));
       if(l.notas) tags.push(`<span class="tag nota">⚠ ${l.notas}</span>`);
-      return `<div class="boleto-item"><div class="nombre">${l.cantidad||1}× ${l.nombre||'Producto'}</div><div class="tags">${tags.join('')}</div></div>`;
+      return `<div class="boleto-item"><div class="cant">${l.cantidad||1}×</div><div class="info"><div class="nombre">${l.nombre||'Producto'}</div><div class="tags">${tags.join('')}</div></div></div>`;
     }).join('');
 
     const siguienteEstado = {pendiente:'preparando', preparando:'listo', listo:'entregado'}[p.estado];
