@@ -1103,11 +1103,17 @@ function renderMenu(){
 function abrirModalItem(categoriaKey, item){
   const cat = MENU[categoriaKey];
   const tieneRollosCombo = item.rollos && item.rollos.length > 0;
-  const empanizable = cat.empanizable && !item.empanizadoFijo && !tieneRollosCombo;
+  // Al agregar un producto a un pedido ya enviado (modo edición) no se asigna empanizado
+  const sinEmpanizado = modoEdicionPedido;
+  const permiteEmpanizado = cat.empanizable && !item.empanizadoFijo;
+  const empanizable = permiteEmpanizado && !tieneRollosCombo && !sinEmpanizado;
+  const pedirEmpanizadoPorRollo = tieneRollosCombo && !sinEmpanizado;
   itemEnEdicion = {categoriaKey, item, empanizado: item.empanizadoFijo || (empanizable ? 'Normal' : null), empanizadoPorRollo: null, salsas: [], notas:'', cantidad:1};
 
   document.getElementById('modal-item-nombre').textContent = item.nombre;
-  document.getElementById('modal-item-desc').textContent = item.desc;
+  const avisoSinEmp = sinEmpanizado && (permiteEmpanizado || tieneRollosCombo)
+    ? ' · Se agrega a un pedido ya enviado: sin empanizado.' : '';
+  document.getElementById('modal-item-desc').textContent = item.desc + avisoSinEmp;
   document.getElementById('input-notas').value = '';
   document.getElementById('cantidad-num').textContent = '1';
 
@@ -1131,9 +1137,9 @@ function abrirModalItem(categoriaKey, item){
   }
 
   const bloqueCombo = document.getElementById('bloque-empanizados-combo');
-  bloqueCombo.classList.toggle('oculto', !tieneRollosCombo);
+  bloqueCombo.classList.toggle('oculto', !pedirEmpanizadoPorRollo);
   bloqueCombo.innerHTML = '';
-  if(tieneRollosCombo){
+  if(pedirEmpanizadoPorRollo){
     itemEnEdicion.empanizadoPorRollo = {};
     item.rollos.forEach(rollo=>{
       itemEnEdicion.empanizadoPorRollo[rollo] = 'Normal';
@@ -1222,6 +1228,7 @@ function confirmarAgregarItem(){
     cantidad: itemEnEdicion.cantidad
   };
   if(modoEdicionPedido && pedidoEnEdicion){
+    nuevoItem.agregadoEnEdicion = true;   // producto agregado a un pedido ya enviado: su empanizado no se asigna
     pedidoEnEdicion.items.push(nuevoItem);
     cerrarModalItem();
     renderEdicionItems();
@@ -1481,9 +1488,16 @@ function defDeLinea(linea){
 function lineaEsEditable(linea){
   const def = defDeLinea(linea);
   if(!def) return false;
+  return lineaPermiteEmpanizado(linea) || def.cat.salsasMax > 0;
+}
+
+// el empanizado no se puede asignar a productos agregados a un pedido ya enviado
+function lineaPermiteEmpanizado(linea){
+  const def = defDeLinea(linea);
+  if(!def || linea.agregadoEnEdicion) return false;
   const tieneRollos = def.item && def.item.rollos && def.item.rollos.length > 0;
   const fijo = def.item && def.item.empanizadoFijo;
-  return tieneRollos || (def.cat.empanizable && !fijo) || def.cat.salsasMax > 0;
+  return !!(tieneRollos || (def.cat.empanizable && !fijo));
 }
 
 function grupoChipsEdicion(etiqueta, opciones, actual, onPick, nombresChip){
@@ -1513,7 +1527,9 @@ function construirEditorLinea(linea){
   const {catKey, cat, item} = def;
 
   const rollosCombo = item && item.rollos && item.rollos.length ? item.rollos : null;
-  if(rollosCombo){
+  if(!lineaPermiteEmpanizado(linea)){
+    // sin selector de empanizado (producto agregado a un pedido ya enviado o de empanizado fijo)
+  } else if(rollosCombo){
     rollosCombo.forEach(rollo=>{
       const actual = linea.empanizadoPorRollo ? linea.empanizadoPorRollo[rollo] : null;
       panel.appendChild(grupoChipsEdicion('Empanizado — Rollo ' + rollo, EMPANIZADOS, actual, op=>{
@@ -1586,7 +1602,7 @@ function renderEdicionItems(){
         <div class="top"><span>${linea.cantidad}× ${linea.nombre}</span><span>$${linea.precio*linea.cantidad}</span></div>
         <div class="meta">${metaPartes.join(' · ') || 'Sin personalización'}</div>
         <div class="acciones-linea">
-          ${editable ? `<button class="editar-linea">${abierta ? '▲ Cerrar edición' : '✏️ Editar empanizado / salsas'}</button>` : ''}
+          ${editable ? `<button class="editar-linea">${abierta ? '▲ Cerrar edición' : (lineaPermiteEmpanizado(linea) ? '✏️ Editar empanizado / salsas' : '✏️ Editar salsas')}</button>` : ''}
           <button class="quitar">Quitar</button>
         </div>`;
       const btnEditar = div.querySelector('.editar-linea');
