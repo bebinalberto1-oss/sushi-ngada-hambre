@@ -193,6 +193,9 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .boleto-num .corregido{color:var(--amber);font-weight:700;}
 .boleto-cliente{font-family:'Anton';text-transform:uppercase;font-size:18px;letter-spacing:.3px;}
 .boleto-hora{font-size:11px;color:var(--muted);text-align:right;}
+.boleto-der{text-align:right;flex:none;}
+.boleto-numdia{font-family:'Anton',sans-serif;font-size:34px;line-height:1;color:var(--cream);margin-bottom:4px;}
+.boleto-numdia small{display:block;font-family:'Work Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--muted);margin-bottom:2px;}
 .boleto-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;font-size:13px;}
 .boleto-item .cant{flex:none;min-width:58px;text-align:center;font-family:'Anton',sans-serif;font-size:36px;line-height:1;color:var(--amber);background:var(--bg-alt);border:1px solid var(--line);border-radius:10px;padding:8px 6px;}
 .boleto-item .info{flex:1;min-width:0;}
@@ -1793,7 +1796,10 @@ async function refrescarCocina(){
     const estado = await leerEstadoNube();
     marcarConexion('cocina', true);
     const hoy = new Date().toLocaleDateString('es-MX');
-    const activos = (estado.pedidos || []).filter(p=> p.fecha === hoy && p.estado !== 'entregado');
+    // número de pedido del día: posición entre todos los pedidos de hoy (incluye los ya entregados)
+    const delDia = (estado.pedidos || []).filter(p=> p.fecha === hoy);
+    delDia.forEach((p, i)=>{ p.numDia = i + 1; });
+    const activos = delDia.filter(p=> p.estado !== 'entregado');
     if(!primerCargaCocina && activos.length > ultimoConteoPedidos){
       pitar(); flashAlerta(); vibrarSiPosible(); flashTitulo(); anunciarPedidoNuevo();
       mostrarAviso('🔥 ¡Nuevo pedido recibido!', 'info');
@@ -1851,8 +1857,11 @@ function pintarCocina(pedidos){
       <div class="franja"></div>
       <div class="boleto-body">
         <div class="boleto-head">
-          <div><div class="boleto-cliente">${p.cliente}</div><div class="boleto-num">${p.id}${p.editadoTs ? ' · <span class="corregido">✏️ CORREGIDO</span>' : ''}</div></div>
-          <div class="boleto-hora">${p.hora}<br>$${p.total}</div>
+          <div><div class="boleto-cliente">${p.cliente}</div>${p.editadoTs ? '<div class="boleto-num"><span class="corregido">✏️ CORREGIDO</span></div>' : ''}</div>
+          <div class="boleto-der">
+            ${p.numDia ? `<div class="boleto-numdia"><small>PEDIDO</small>#${p.numDia}</div>` : ''}
+            <div class="boleto-hora">${p.hora}<br>$${p.total}</div>
+          </div>
         </div>
         ${itemsHtml}
         <div class="boleto-foot"></div>
