@@ -1735,7 +1735,7 @@ function anunciarPedidoNuevo(){
   try{
     if(!('speechSynthesis' in window)) return;
     speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance('Pedido nuevo');
+    const utter = new SpeechSynthesisUtterance('Ya cayó pedido');
     utter.lang = 'es-MX';
     utter.rate = 1;
     utter.volume = 1;
@@ -1748,7 +1748,7 @@ function anunciarPedidoCorregido(){
   if(!document.getElementById('chk-sonido').checked) return;
   try{
     if(!('speechSynthesis' in window)) return;
-    const utter = new SpeechSynthesisUtterance('Pedido corregido, Panchito y Eli');
+    const utter = new SpeechSynthesisUtterance('Pedido corregido, Pancho y Oli');
     utter.lang = 'es-MX';
     utter.rate = 1;
     utter.volume = 1;
