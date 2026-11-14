@@ -139,6 +139,8 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .item-card p{color:var(--muted);font-size:12.5px;margin:6px 0 12px;line-height:1.45;min-height:34px;}
 .item-card button{width:100%;padding:8px;border-radius:7px;background:var(--bg-alt);color:var(--cream);border:1px solid var(--line);font-size:13px;font-weight:600;}
 .item-card button:hover{background:var(--blue);color:#08131c;border-color:var(--blue);}
+.item-card.fuera{opacity:.55;}
+.item-card.fuera button,.item-card.fuera button:hover{background:var(--bg-alt);color:var(--muted);border-color:var(--line);cursor:not-allowed;}
 
 .panel-ticket{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;position:sticky;top:20px;}
 .panel-ticket h3{margin:0 0 14px;font-size:19px;}
@@ -331,7 +333,7 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
       <div class="rol-card">
         <div class="icono">🧾</div>
         <h3>Soy Receptor de pedidos</h3>
-        <p>Toma el pedido: rollos, bolas, combos, empanizado, salsas y notas. Envía todo directo a cocina.</p>
+        <p>Toma el pedido: rollos, complementos, sushiburguer, combos, charolas, empanizado, salsas y notas. Envía todo directo a cocina.</p>
         <button class="btn btn-azul btn-w" onclick="elegirRol('mesero')">Tomar pedidos</button>
       </div>
       <div class="rol-card">
@@ -681,48 +683,57 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 /* ============================================================
    DATOS DEL MENÚ — Sushi'Ngada Hambre
    ============================================================ */
+const EMPANIZADOS = ['Normal','Flamin Hot','Coco','Natural'];
+const EMPANIZADOS_ROLLOS = ['Normal','Flamin Hot','Coco','Natural','Mitad y mitad'];
+const EMPANIZADOS_COMPLEMENTOS = ['Normal','Flamin Hot','Natural'];   // bola, burrisushi y banderillas: normal o flamin hot
+const EMPANIZADOS_DEDOS = ['Normal','Coco','Flamin Hot'];           // dedos: siempre empanizados (normal, coco o flamin)
+const EMPANIZADOS_CHAROLAS = ['Normal','Flamin Hot'];               // charolas: normal o flamin hot
+
 const MENU = {
   rollos: {
-    titulo: 'Rollos', empanizable:true, salsasMax:2,
+    titulo:'Rollos', empanizable:true, salsasMax:2,
     items:[
-      {id:'r1', nombre:'Vianey', precio:110, desc:'Camarón, carne, pollo, aguacate, queso crema, pepino.'},
-      {id:'r2', nombre:"Marsella's", precio:110, desc:'Mango por fuera, queso crema, pepino, aguacate y camarón.'},
-      {id:'r3', nombre:'Bebin', precio:100, desc:'Camarón, pollo, aguacate, queso crema.'},
-      {id:'r4', nombre:'Angela', precio:100, desc:'Surimi, camarón, aguacate, pepino, queso crema.'},
-      {id:'r5', nombre:'Edson', precio:100, desc:'Pollo, queso crema, pepino, aguacate.'},
-    ]
-  },
-  bolas: {
-    titulo:'Bolas de Arroz', empanizable:true, salsasMax:1,
-    items:[
-      {id:'b1', nombre:'Bola Selección', precio:100, desc:'4 ingredientes a seleccionar, al igual que su empanizado.'},
-      {id:'b2', nombre:'Bola Arely', precio:110, desc:'Surimi, queso crema, aguacate, camarón y pepino.'},
-    ]
-  },
-  burritos: {
-    titulo:'BurriSushi', empanizable:true, salsasMax:2,
-    items:[
-      {id:'u1', nombre:'Reyna', precio:85, desc:'Surimi, camarón, queso crema y aguacate.'},
-      {id:'u2', nombre:'Chita', precio:85, desc:'Res, pollo, queso crema, pepino y aguacate.'},
-      {id:'u3', nombre:'La Avispa Ruiz', precio:90, desc:'Camarón, queso crema, aguacate, pepino y mango.'},
+      {id:'r1', nombre:"Vianey's", precio:120, desc:'Milanesa, pollo, camarón, queso crema, pepino y aguacate.'},
+      {id:'r2', nombre:'El Edson', precio:110, desc:'Pollo, queso crema, pepino y aguacate.'},
+      {id:'r3', nombre:'Bebin Roll', precio:110, desc:'Camarón, pollo, aguacate y queso crema.'},
+      {id:'r4', nombre:"Angela's", precio:110, desc:'Camarón, surimi, pepino, queso crema y aguacate.'},
+      {id:'r5', nombre:"Marcella's", precio:120, desc:'Mango, queso crema, pepino, aguacate y camarón. Por temporada: de abril a septiembre.', temporada:{desde:4, hasta:9}},
+      {id:'r6', nombre:'Panchito Roll', precio:150, desc:'Camarón empanizado de coco, aguacate, queso crema, pepino, tampico por encima y surimi.'},
     ]
   },
   complementos: {
-    titulo:'Complementos', empanizable:true, salsasMax:1,
+    titulo:'Complementos', empanizable:false, salsasMax:1,
     items:[
-      {id:'c1', nombre:'Dedos de Queso', precio:80, desc:'Cuatro dedos de queso empanizados.', empanizadoFijo:'Normal'},
-      {id:'c2', nombre:'Dedos Flamin Hot', precio:90, desc:'Cuatro dedos de queso empanizados de Flamin Hot.', empanizadoFijo:'Flamin Hot'},
-      {id:'c3', nombre:'Dedos de Surimi', precio:100, desc:'Cuatro dedos de surimi relleno de queso crema, empanizado.'},
-      {id:'c4', nombre:'Dedos de Coco', precio:90, desc:'Cuatro dedos de queso empanizados de coco dulce.', empanizadoFijo:'Coco'},
+      {id:'c1', nombre:'Bola Areli', precio:110, desc:'Camarón, queso crema, surimi, pepino y aguacate.', empanizados:EMPANIZADOS_COMPLEMENTOS, cuentaComoRollo:true},
+      {id:'c2', nombre:'Orden de dedos de queso', precio:90, desc:'4 dedos de queso empanizados (normal, coco o Flamin).', empanizados:EMPANIZADOS_DEDOS},
+      {id:'c3', nombre:'Orden de dedos de surimi', precio:90, desc:'4 dedos de surimi empanizados (normal, coco o Flamin).', empanizados:EMPANIZADOS_DEDOS},
+      {id:'c4', nombre:'BurriSushi Reyna', precio:90, desc:'Surimi, camarón, queso crema, aguacate y pepino.', salsasMax:2, empanizados:EMPANIZADOS_COMPLEMENTOS},
+      {id:'c5', nombre:'Banderilla El Cabe', precio:90, desc:'Banderilla de sushi: carne, pollo, queso crema y aguacate.', empanizados:EMPANIZADOS_COMPLEMENTOS},
+      {id:'c6', nombre:'Banderilla El Bebo', precio:90, desc:'Banderilla de sushi: surimi, camarón, aguacate y queso crema.', empanizados:EMPANIZADOS_COMPLEMENTOS},
+      {id:'c7', nombre:'Banderilla Ramsal', precio:90, desc:'Banderilla de sushi: carne, camarón, queso crema y aguacate.', empanizados:EMPANIZADOS_COMPLEMENTOS},
+    ]
+  },
+  sushiburguer: {
+    titulo:'Sushiburguer', empanizable:false, salsasMax:0,
+    items:[
+      {id:'s1', nombre:'La Miave', precio:150, desc:'Pollo, camarón, milanesa, aguacate y queso crema, bañada en salsa de anguila.'},
+      {id:'s2', nombre:'La Nandin', precio:150, desc:'Camarón, surimi, tampico, aguacate y queso crema, bañada en salsa de chipotle.'},
     ]
   },
   combos: {
     titulo:'Combos', empanizable:false, salsasMax:2,
     items:[
-      {id:'k1', nombre:'Combo Ele', precio:150, desc:'1 Rollo Vianey + 2 dedos de queso + agua de jamaica.', rollos:['Vianey']},
-      {id:'k2', nombre:'Combo Chuy', precio:215, desc:'1 Rollo Edson + 1 Rollo Vianey + 1L agua de limón.', rollos:['Edson','Vianey']},
-      {id:'k3', nombre:'Combo Saúl', precio:250, desc:'1 Rollo Edson + 1 Rollo Vianey + 2 dedos de surimi + 1L agua de jamaica.', rollos:['Edson','Vianey']},
-      {id:'k4', nombre:'Combo Aldo', precio:300, desc:'2 Bolas Arely + 4 dedos de Surimi.', rollos:[], bolas:2},
+      {id:'k1', nombre:'Combo Ele', precio:160, desc:"1 rollo Vianey's + 2 dedos de queso + 1 agua de Jamaica.", rollos:["Vianey's"]},
+      {id:'k2', nombre:'Combo Chuy', precio:215, desc:"1 rollo El Edson + 1 Vianey's + 1 agua de limón.", rollos:['El Edson',"Vianey's"]},
+      {id:'k3', nombre:'Combo Saúl', precio:260, desc:"1 rollo Vianey's + 1 rollo El Edson + 2 deditos de surimi + 1 agua de Jamaica.", rollos:["Vianey's",'El Edson']},
+      {id:'k4', nombre:'Combo Pareja', precio:320, desc:'1 Sushiburguer La Miave + 1 Sushiburguer La Nandin + 1 agua de mandarina (el agua de mandarina es solo de octubre a enero).', rollos:[], salsasMax:0},
+    ]
+  },
+  charolas: {
+    titulo:'Charolas', empanizable:false, salsasMax:0,
+    items:[
+      {id:'h1', nombre:'Charola chica', precio:450, desc:"Mini bola Areli, Angela's, Vianey's, dedos Flamin, dedos coco y dedos normal.", empanizados:EMPANIZADOS_CHAROLAS},
+      {id:'h2', nombre:'Charola grande', precio:600, desc:"Angela's, Vianey's, Bebin Roll, mini bola Areli, dedos Flamin, dedos coco y dedos de surimi.", empanizados:EMPANIZADOS_CHAROLAS},
     ]
   },
   bebidas: {
@@ -730,13 +741,34 @@ const MENU = {
     items:[
       {id:'d1', nombre:'Agua de Limón', precio:30, desc:'Vaso de agua fresca de limón.'},
       {id:'d2', nombre:'Agua de Jamaica', precio:30, desc:'Vaso de agua fresca de jamaica.'},
-      {id:'d3', nombre:'Agua de Mandarina', precio:30, desc:'Por temporada.'},
+      {id:'d3', nombre:'Agua de Mandarina', precio:30, desc:'Solo de octubre a enero.', temporada:{desde:10, hasta:1}},
     ]
   }
 };
-const EMPANIZADOS = ['Normal','Flamin Hot','Coco','Natural'];
-const EMPANIZADOS_ROLLOS = ['Normal','Flamin Hot','Coco','Natural','Mitad y mitad'];
-const SALSAS = ['Salsa de anguila','Salsa de soya','Salsa soya-jalapeño-limón','Salsa chipotle','Salsa Siracha','Queso Amarillo'];
+const SALSAS = ['Salsa de soya','Salsa de anguila','Salsa de soya con jalapeño','Salsa Siracha','Queso Amarillo','Salsa chipotle','Salsa de tampico'];
+
+/* ---- ayudas del menú: opciones por producto y temporadas ---- */
+// Opciones de empanizado de un producto (o null si no lleva). Un producto puede traer su propia lista (empanizados).
+function opcionesEmpanizadoDe(catKey, item){
+  if(item && item.empanizadoFijo) return null;
+  if(item && Array.isArray(item.empanizados)) return item.empanizados.length ? item.empanizados : null;
+  const cat = MENU[catKey];
+  if(!cat || !cat.empanizable) return null;
+  return catKey === 'rollos' ? EMPANIZADOS_ROLLOS : EMPANIZADOS;
+}
+// Máximo de salsas de un producto (el producto puede tener el suyo; si no, el de su categoría)
+function salsasMaxDe(cat, item){
+  return item && item.salsasMax !== undefined ? item.salsasMax : cat.salsasMax;
+}
+// Productos de temporada: {desde:mes, hasta:mes} (1-12; si desde > hasta cruza el año, ej. oct-ene)
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function itemDisponible(item){
+  const t = item && item.temporada;
+  if(!t) return true;
+  const m = new Date().getMonth() + 1;
+  return t.desde <= t.hasta ? (m >= t.desde && m <= t.hasta) : (m >= t.desde || m <= t.hasta);
+}
+function textoTemporada(t){ return `de ${MESES[t.desde - 1]} a ${MESES[t.hasta - 1]}`; }
 
 const APPS_SCRIPT_CODE =
 `function doPost(e){
@@ -1091,13 +1123,14 @@ function renderMenu(){
   cont.innerHTML = '';
   const cat = MENU[tabActiva];
   cat.items.forEach(item=>{
+    const disponible = itemDisponible(item);
     const card = document.createElement('div');
-    card.className = 'item-card';
+    card.className = 'item-card' + (disponible ? '' : ' fuera');
     card.innerHTML = `
       <div class="cabeza"><h4>${item.nombre}</h4><span class="precio">$${item.precio}</span></div>
       <p>${item.desc}</p>
-      <button>+ Agregar</button>`;
-    card.querySelector('button').onclick = ()=> abrirModalItem(tabActiva, item);
+      <button${disponible ? '' : ' disabled'}>${disponible ? '+ Agregar' : 'Fuera de temporada (' + textoTemporada(item.temporada) + ')'}</button>`;
+    if(disponible) card.querySelector('button').onclick = ()=> abrirModalItem(tabActiva, item);
     cont.appendChild(card);
   });
 }
@@ -1108,10 +1141,12 @@ function abrirModalItem(categoriaKey, item){
   const tieneRollosCombo = item.rollos && item.rollos.length > 0;
   // Al agregar un producto a un pedido ya enviado (modo edición) no se asigna empanizado
   const sinEmpanizado = modoEdicionPedido;
-  const permiteEmpanizado = cat.empanizable && !item.empanizadoFijo;
+  const opcionesEmp = opcionesEmpanizadoDe(categoriaKey, item);
+  const salsasMax = salsasMaxDe(cat, item);
+  const permiteEmpanizado = !!opcionesEmp;
   const empanizable = permiteEmpanizado && !tieneRollosCombo && !sinEmpanizado;
   const pedirEmpanizadoPorRollo = tieneRollosCombo && !sinEmpanizado;
-  itemEnEdicion = {categoriaKey, item, empanizado: item.empanizadoFijo || (empanizable ? 'Normal' : null), empanizadoPorRollo: null, salsas: [], notas:'', cantidad:1};
+  itemEnEdicion = {categoriaKey, item, salsasMax, empanizado: item.empanizadoFijo || (empanizable ? 'Normal' : null), empanizadoPorRollo: null, salsas: [], notas:'', cantidad:1};
 
   document.getElementById('modal-item-nombre').textContent = item.nombre;
   const avisoSinEmp = sinEmpanizado && (permiteEmpanizado || tieneRollosCombo)
@@ -1125,7 +1160,6 @@ function abrirModalItem(categoriaKey, item){
   if(empanizable){
     const c = document.getElementById('chips-empanizado');
     c.innerHTML = '';
-    const opcionesEmp = categoriaKey === 'rollos' ? EMPANIZADOS_ROLLOS : EMPANIZADOS;
     opcionesEmp.forEach(op=>{
       const chip = document.createElement('div');
       chip.className = 'chip' + (op==='Normal' ? ' sel' : '');
@@ -1170,8 +1204,8 @@ function abrirModalItem(categoriaKey, item){
   }
 
   const bloqueSalsas = document.getElementById('bloque-salsas');
-  bloqueSalsas.classList.toggle('oculto', cat.salsasMax === 0);
-  document.getElementById('label-salsas').textContent = `Salsas (máx. ${cat.salsasMax})`;
+  bloqueSalsas.classList.toggle('oculto', salsasMax === 0);
+  document.getElementById('label-salsas').textContent = `Salsas (máx. ${salsasMax})`;
   const cs = document.getElementById('chips-salsas');
   cs.innerHTML = '';
   SALSAS.forEach(s=>{
@@ -1184,7 +1218,7 @@ function abrirModalItem(categoriaKey, item){
         itemEnEdicion.salsas.splice(idx,1);
         chip.classList.remove('sel');
       } else {
-        if(itemEnEdicion.salsas.length >= cat.salsasMax) return;
+        if(itemEnEdicion.salsas.length >= salsasMax) return;
         itemEnEdicion.salsas.push(s);
         chip.classList.add('sel');
       }
@@ -1196,8 +1230,7 @@ function abrirModalItem(categoriaKey, item){
   document.getElementById('overlay-item').classList.remove('oculto');
 }
 function actualizarChipsDeshabilitados(){
-  const cat = MENU[itemEnEdicion.categoriaKey];
-  const lleno = itemEnEdicion.salsas.length >= cat.salsasMax;
+  const lleno = itemEnEdicion.salsas.length >= itemEnEdicion.salsasMax;
   [...document.getElementById('chips-salsas').children].forEach(chip=>{
     const seleccionado = chip.classList.contains('sel');
     chip.classList.toggle('deshabilitado', lleno && !seleccionado);
@@ -1440,7 +1473,9 @@ function poblarSelectAgregarEdicion(){
     cat.items.forEach(item=>{
       const opt = document.createElement('option');
       opt.value = catKey + '|' + item.id;
-      opt.textContent = `${item.nombre} — $${item.precio}`;
+      const disponible = itemDisponible(item);
+      opt.textContent = `${item.nombre} — $${item.precio}` + (disponible ? '' : ` (fuera de temporada: ${textoTemporada(item.temporada)})`);
+      opt.disabled = !disponible;
       grupo.appendChild(opt);
     });
     sel.appendChild(grupo);
@@ -1491,7 +1526,7 @@ function defDeLinea(linea){
 function lineaEsEditable(linea){
   const def = defDeLinea(linea);
   if(!def) return false;
-  return lineaPermiteEmpanizado(linea) || def.cat.salsasMax > 0;
+  return lineaPermiteEmpanizado(linea) || salsasMaxDe(def.cat, def.item) > 0;
 }
 
 // el empanizado no se puede asignar a productos agregados a un pedido ya enviado
@@ -1499,8 +1534,7 @@ function lineaPermiteEmpanizado(linea){
   const def = defDeLinea(linea);
   if(!def || linea.agregadoEnEdicion) return false;
   const tieneRollos = def.item && def.item.rollos && def.item.rollos.length > 0;
-  const fijo = def.item && def.item.empanizadoFijo;
-  return !!(tieneRollos || (def.cat.empanizable && !fijo));
+  return !!(tieneRollos || opcionesEmpanizadoDe(def.catKey, def.item));
 }
 
 function grupoChipsEdicion(etiqueta, opciones, actual, onPick, nombresChip){
@@ -1541,8 +1575,8 @@ function construirEditorLinea(linea){
         renderEdicionItems();
       }));
     });
-  } else if(cat.empanizable && !(item && item.empanizadoFijo)){
-    const opciones = catKey === 'rollos' ? EMPANIZADOS_ROLLOS : EMPANIZADOS;
+  } else if(opcionesEmpanizadoDe(catKey, item)){
+    const opciones = opcionesEmpanizadoDe(catKey, item);
     panel.appendChild(grupoChipsEdicion('Empanizado', opciones, linea.empanizado, op=>{
       const eraMitad = linea.empanizado === 'Mitad y mitad';
       const esMitad = op === 'Mitad y mitad';
@@ -1553,15 +1587,16 @@ function construirEditorLinea(linea){
     }, {'Mitad y mitad': 'Mitad y mitad (+$5)'}));
   }
 
-  if(cat.salsasMax > 0){
+  const salsasMax = salsasMaxDe(cat, item);
+  if(salsasMax > 0){
     linea.salsas = linea.salsas || [];
     const campo = document.createElement('div');
     campo.className = 'campo';
     const lab = document.createElement('label');
-    lab.textContent = `Salsas (máx. ${cat.salsasMax})`;
+    lab.textContent = `Salsas (máx. ${salsasMax})`;
     const grupo = document.createElement('div');
     grupo.className = 'chip-grupo';
-    const lleno = linea.salsas.length >= cat.salsasMax;
+    const lleno = linea.salsas.length >= salsasMax;
     SALSAS.forEach(s=>{
       const sel = linea.salsas.includes(s);
       const chip = document.createElement('div');
@@ -1571,7 +1606,7 @@ function construirEditorLinea(linea){
         const i = linea.salsas.indexOf(s);
         if(i >= 0) linea.salsas.splice(i, 1);
         else {
-          if(linea.salsas.length >= cat.salsasMax) return;
+          if(linea.salsas.length >= salsasMax) return;
           linea.salsas.push(s);
         }
         renderEdicionItems();
@@ -1903,17 +1938,24 @@ function guardarSheetsUrl(){
   mostrarAviso('URL guardada.', 'exito');
 }
 
+// Combos que ya no están en el menú pero pueden aparecer en pedidos anteriores
+const COMBOS_RETIRADOS = {'Combo Aldo': {rollos:0, bolas:2}};
+
+// Piezas que cuentan para el bono: rollos, bolas (Bola Areli y las "Bolas de Arroz" del menú anterior)
+// y los rollos/bolas que vienen dentro de los combos.
 function contarRollosVendidos(pedidos){
   let total = 0;
   pedidos.forEach(pedido=>{
     const items = pedido.items && pedido.items.length ? pedido.items : [];
     items.forEach(item=>{
-      if(item.categoria === 'Rollos' || item.categoria === 'Bolas de Arroz'){
+      const def = defDeLinea(item);
+      if(item.categoria === 'Rollos' || item.categoria === 'Bolas de Arroz' || (def && def.item && def.item.cuentaComoRollo)){
         total += item.cantidad || 1;
       } else if(item.categoria === 'Combos'){
-        const def = MENU.combos.items.find(c=> c.nombre === item.nombre);
-        const piezasDelCombo = (def && def.rollos ? def.rollos.length : 0) + (def && def.bolas ? def.bolas : 0);
-        total += piezasDelCombo * (item.cantidad || 1);
+        const combo = MENU.combos.items.find(c=> c.nombre === item.nombre);
+        const rollos = combo ? (combo.rollos ? combo.rollos.length : 0) : (COMBOS_RETIRADOS[item.nombre] ? COMBOS_RETIRADOS[item.nombre].rollos : 0);
+        const bolas = combo ? (combo.bolas || 0) : (COMBOS_RETIRADOS[item.nombre] ? COMBOS_RETIRADOS[item.nombre].bolas : 0);
+        total += (rollos + bolas) * (item.cantidad || 1);
       }
     });
   });
