@@ -139,6 +139,13 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .item-card p{color:var(--muted);font-size:12.5px;margin:6px 0 12px;line-height:1.45;min-height:34px;}
 .item-card button{width:100%;padding:8px;border-radius:7px;background:var(--bg-alt);color:var(--cream);border:1px solid var(--line);font-size:13px;font-weight:600;}
 .item-card button:hover{background:var(--blue);color:#08131c;border-color:var(--blue);}
+.fila-contenido{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);}
+.fila-contenido:last-child{border-bottom:none;}
+.fila-contenido .nom{font-size:14px;color:var(--cream);flex:1;}
+.fila-contenido .nom.con{font-weight:800;color:var(--amber);}
+.fila-contenido .paso{display:flex;align-items:center;gap:8px;flex:none;}
+.fila-contenido .paso button{width:32px;height:32px;border-radius:8px;background:var(--bg-alt);border:1px solid var(--line);color:var(--cream);font-size:17px;cursor:pointer;}
+.fila-contenido .paso span{font-family:'Space Mono',monospace;font-size:16px;min-width:22px;text-align:center;color:var(--cream);}
 .item-card.fuera{opacity:.55;}
 .item-card.fuera button,.item-card.fuera button:hover{background:var(--bg-alt);color:var(--muted);border-color:var(--line);cursor:not-allowed;}
 
@@ -201,6 +208,23 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .boleto-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;font-size:13px;}
 .boleto-item .cant{flex:none;min-width:58px;text-align:center;font-family:'Anton',sans-serif;font-size:36px;line-height:1;color:var(--amber);background:var(--bg-alt);border:1px solid var(--line);border-radius:10px;padding:8px 6px;}
 .boleto-item .info{flex:1;min-width:0;}
+.boleto-item.es-nuevo .cant{border-color:var(--amber);}
+.boleto-item .contenido{margin-top:8px;display:flex;flex-direction:column;gap:4px;}
+.boleto-item .contenido div{font-family:'Anton',sans-serif;font-size:24px;line-height:1.15;color:var(--cream);letter-spacing:.3px;}
+.boleto-item .contenido div b{color:var(--amber);font-size:28px;margin-right:2px;}
+.boleto-item .contenido small{font-size:11px;color:var(--muted);}
+.tag.nuevo{color:#08131c;background:var(--amber);border-color:var(--amber);font-weight:800;}
+.correccion{margin:4px 0 14px;border:2px solid var(--amber);border-radius:10px;background:rgba(224,165,48,.08);padding:10px 12px;}
+.correccion-bloque + .correccion-bloque{margin-top:10px;padding-top:10px;border-top:1px dashed var(--amber);}
+.correccion-bloque.vieja{opacity:.7;}
+.correccion-tit{font-size:12px;font-weight:800;letter-spacing:.6px;color:var(--amber);margin-bottom:6px;}
+.cor-linea{font-family:'Work Sans',sans-serif;font-size:16px;font-weight:600;line-height:1.35;margin-bottom:6px;color:var(--cream);}
+.cor-linea:last-child{margin-bottom:0;}
+.cor-linea.agregado b{color:var(--green);}
+.cor-linea.quitado b{color:var(--red);}
+.cor-linea.quitado{color:var(--muted);text-decoration:line-through;}
+.cor-linea.cambio b{color:var(--amber);}
+.cor-linea.cambio s{color:var(--muted);}
 .boleto-item .nombre{font-weight:800;color:var(--cream);font-size:18px;line-height:1.2;}
 .boleto-item .tags{margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;}
 .tag{font-size:12px;padding:3px 8px;border-radius:5px;background:var(--bg-alt);border:1px solid var(--line);color:var(--muted);}
@@ -506,6 +530,11 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 
     <div id="bloque-empanizados-combo" class="oculto"></div>
 
+    <div id="bloque-contenido" class="oculto">
+      <div class="campo"><label>¿Qué lleva? (indica cuántas piezas de cada una)</label></div>
+      <div id="lista-contenido"></div>
+    </div>
+
     <div id="bloque-salsas">
       <div class="campo"><label id="label-salsas">Salsas (máx. 2)</label></div>
       <div class="chip-grupo" id="chips-salsas"></div>
@@ -732,8 +761,10 @@ const MENU = {
   charolas: {
     titulo:'Charolas', empanizable:false, salsasMax:0,
     items:[
-      {id:'h1', nombre:'Charola chica', precio:450, desc:"Mini bola Areli, Angela's, Vianey's, dedos Flamin, dedos coco y dedos normal.", empanizados:EMPANIZADOS_CHAROLAS},
-      {id:'h2', nombre:'Charola grande', precio:600, desc:"Angela's, Vianey's, Bebin Roll, mini bola Areli, dedos Flamin, dedos coco y dedos de surimi.", empanizados:EMPANIZADOS_CHAROLAS},
+      {id:'h1', nombre:'Charola chica', precio:450, desc:"Mini bola Areli, Angela's, Vianey's, dedos Flamin, dedos coco y dedos normal.", empanizados:EMPANIZADOS_CHAROLAS,
+        contenidoOpciones:["Angela's","Vianey's",'Mini bola Areli','Dedos Flamin','Dedos coco','Dedos normal']},
+      {id:'h2', nombre:'Charola grande', precio:600, desc:"Angela's, Vianey's, Bebin Roll, mini bola Areli, dedos Flamin, dedos coco y dedos de surimi.", empanizados:EMPANIZADOS_CHAROLAS,
+        contenidoOpciones:["Angela's","Vianey's",'Bebin Roll','Mini bola Areli','Dedos Flamin','Dedos coco','Dedos de surimi']},
     ]
   },
   bebidas: {
@@ -1139,19 +1170,15 @@ function renderMenu(){
 function abrirModalItem(categoriaKey, item){
   const cat = MENU[categoriaKey];
   const tieneRollosCombo = item.rollos && item.rollos.length > 0;
-  // Al agregar un producto a un pedido ya enviado (modo edición) no se asigna empanizado
-  const sinEmpanizado = modoEdicionPedido;
   const opcionesEmp = opcionesEmpanizadoDe(categoriaKey, item);
   const salsasMax = salsasMaxDe(cat, item);
   const permiteEmpanizado = !!opcionesEmp;
-  const empanizable = permiteEmpanizado && !tieneRollosCombo && !sinEmpanizado;
-  const pedirEmpanizadoPorRollo = tieneRollosCombo && !sinEmpanizado;
-  itemEnEdicion = {categoriaKey, item, salsasMax, empanizado: item.empanizadoFijo || (empanizable ? 'Normal' : null), empanizadoPorRollo: null, salsas: [], notas:'', cantidad:1};
+  const empanizable = permiteEmpanizado && !tieneRollosCombo;
+  const pedirEmpanizadoPorRollo = tieneRollosCombo;
+  itemEnEdicion = {categoriaKey, item, salsasMax, empanizado: item.empanizadoFijo || (empanizable ? 'Normal' : null), empanizadoPorRollo: null, salsas: [], contenido: {}, notas:'', cantidad:1};
 
   document.getElementById('modal-item-nombre').textContent = item.nombre;
-  const avisoSinEmp = sinEmpanizado && (permiteEmpanizado || tieneRollosCombo)
-    ? ' · Se agrega a un pedido ya enviado: sin empanizado.' : '';
-  document.getElementById('modal-item-desc').textContent = item.desc + avisoSinEmp;
+  document.getElementById('modal-item-desc').textContent = item.desc;
   document.getElementById('input-notas').value = '';
   document.getElementById('cantidad-num').textContent = '1';
 
@@ -1203,6 +1230,12 @@ function abrirModalItem(categoriaKey, item){
     });
   }
 
+  const bloqueContenido = document.getElementById('bloque-contenido');
+  bloqueContenido.classList.toggle('oculto', !item.contenidoOpciones);
+  if(item.contenidoOpciones){
+    construirFilasContenido(document.getElementById('lista-contenido'), item.contenidoOpciones, itemEnEdicion.contenido, ()=>{});
+  }
+
   const bloqueSalsas = document.getElementById('bloque-salsas');
   bloqueSalsas.classList.toggle('oculto', salsasMax === 0);
   document.getElementById('label-salsas').textContent = `Salsas (máx. ${salsasMax})`;
@@ -1248,6 +1281,37 @@ function cerrarModalItem(){
     document.getElementById('overlay-editar-pedido').classList.remove('oculto');
   }
 }
+// Contenido de una charola: mapa {nombre: piezas} <-> lista [{nombre, cantidad}] <-> texto "2× Angela's, 1× Vianey's"
+function contenidoDesdeMapa(mapa){
+  return Object.entries(mapa).filter(([, n])=> n > 0).map(([nombre, cantidad])=> ({nombre, cantidad}));
+}
+function mapaDesdeContenido(lista){
+  const m = {};
+  (lista || []).forEach(x=>{ m[x.nombre] = x.cantidad; });
+  return m;
+}
+function textoContenido(lista){
+  return (lista || []).map(x=> `${x.cantidad}× ${x.nombre}`).join(', ');
+}
+function construirFilasContenido(cont, opciones, mapa, alCambiar){
+  cont.innerHTML = '';
+  opciones.forEach(nombre=>{
+    const n = mapa[nombre] || 0;
+    const fila = document.createElement('div');
+    fila.className = 'fila-contenido';
+    fila.innerHTML = `<div class="nom${n > 0 ? ' con' : ''}">${nombre}</div>
+      <div class="paso"><button class="menos">−</button><span>${n}</span><button class="mas">+</button></div>`;
+    const cambiar = d=>{
+      mapa[nombre] = Math.max(0, (mapa[nombre] || 0) + d);
+      alCambiar();
+      construirFilasContenido(cont, opciones, mapa, alCambiar);
+    };
+    fila.querySelector('.menos').onclick = ()=> cambiar(-1);
+    fila.querySelector('.mas').onclick = ()=> cambiar(1);
+    cont.appendChild(fila);
+  });
+}
+
 function confirmarAgregarItem(){
   if(!itemEnEdicion) return;
   itemEnEdicion.notas = document.getElementById('input-notas').value.trim();
@@ -1263,8 +1327,13 @@ function confirmarAgregarItem(){
     notas: itemEnEdicion.notas,
     cantidad: itemEnEdicion.cantidad
   };
+  if(itemEnEdicion.item.contenidoOpciones){
+    const contenido = contenidoDesdeMapa(itemEnEdicion.contenido);
+    if(!contenido.length){ mostrarAviso('Indica qué lleva (cuántas piezas de cada una).', 'error'); return; }
+    nuevoItem.contenido = contenido;
+  }
   if(modoEdicionPedido && pedidoEnEdicion){
-    nuevoItem.agregadoEnEdicion = true;   // producto agregado a un pedido ya enviado: su empanizado no se asigna
+    nuevoItem.agregadoEnEdicion = true;   // producto agregado a un pedido ya enviado (cocina lo marca como NUEVO)
     pedidoEnEdicion.items.push(nuevoItem);
     cerrarModalItem();
     renderEdicionItems();
@@ -1290,11 +1359,7 @@ function renderTicket(){
     carrito.forEach((linea, idx)=>{
       const div = document.createElement('div');
       div.className = 'ticket-linea';
-      const metaPartes = [];
-      if(linea.empanizadoPorRollo) metaPartes.push(textoEmpanizadoPorRollo(linea.empanizadoPorRollo));
-      else if(linea.empanizado) metaPartes.push('Empanizado: ' + linea.empanizado);
-      if(linea.salsas && linea.salsas.length) metaPartes.push('Salsas: ' + linea.salsas.join(', '));
-      if(linea.notas) metaPartes.push('Nota: ' + linea.notas);
+      const metaPartes = metaDeLinea(linea);
       div.innerHTML = `
         <div class="top"><span>${linea.cantidad}× ${linea.nombre}</span><span>$${linea.precio*linea.cantidad}</span></div>
         <div class="meta">${metaPartes.join(' · ') || 'Sin personalización'}</div>
@@ -1336,11 +1401,21 @@ function reiniciarEnvio(){
   [...document.getElementById('chips-envio').children].forEach(c=>c.classList.remove('sel'));
 }
 
+// Partes de descripción de una línea del pedido (ticket y edición)
+function metaDeLinea(linea){
+  const m = [];
+  if(linea.contenido && linea.contenido.length) m.push('Lleva: ' + textoContenido(linea.contenido));
+  if(linea.empanizadoPorRollo) m.push(textoEmpanizadoPorRollo(linea.empanizadoPorRollo));
+  else if(linea.empanizado) m.push('Empanizado: ' + linea.empanizado);
+  if(linea.salsas && linea.salsas.length) m.push('Salsas: ' + linea.salsas.join(', '));
+  if(linea.notas) m.push('Nota: ' + linea.notas);
+  return m;
+}
 function textoItemsLocal(items){
-  return items.map(l=> `${l.cantidad}x ${l.nombre}${l.empanizadoPorRollo?' ('+textoEmpanizadoPorRollo(l.empanizadoPorRollo)+')':(l.empanizado?' ('+l.empanizado+')':'')}${l.salsas && l.salsas.length?' ['+l.salsas.join('/')+']':''}${l.notas?' - '+l.notas:''}`).join(' | ');
+  return items.map(l=> `${l.cantidad}x ${l.nombre}${l.contenido && l.contenido.length?' {'+textoContenido(l.contenido)+'}':''}${l.empanizadoPorRollo?' ('+textoEmpanizadoPorRollo(l.empanizadoPorRollo)+')':(l.empanizado?' ('+l.empanizado+')':'')}${l.salsas && l.salsas.length?' ['+l.salsas.join('/')+']':''}${l.notas?' - '+l.notas:''}`).join(' | ');
 }
 function itemsParaLocal(items){
-  return items.map(l=> ({nombre:l.nombre, categoria:l.categoria, empanizado:l.empanizado, empanizadoPorRollo:l.empanizadoPorRollo, precio:l.precio, cantidad:l.cantidad}));
+  return items.map(l=> ({nombre:l.nombre, categoria:l.categoria, empanizado:l.empanizado, empanizadoPorRollo:l.empanizadoPorRollo, contenido:l.contenido, precio:l.precio, cantidad:l.cantidad}));
 }
 
 async function enviarComanda(){
@@ -1526,13 +1601,12 @@ function defDeLinea(linea){
 function lineaEsEditable(linea){
   const def = defDeLinea(linea);
   if(!def) return false;
-  return lineaPermiteEmpanizado(linea) || salsasMaxDe(def.cat, def.item) > 0;
+  return lineaPermiteEmpanizado(linea) || salsasMaxDe(def.cat, def.item) > 0 || !!(def.item && def.item.contenidoOpciones);
 }
 
-// el empanizado no se puede asignar a productos agregados a un pedido ya enviado
 function lineaPermiteEmpanizado(linea){
   const def = defDeLinea(linea);
-  if(!def || linea.agregadoEnEdicion) return false;
+  if(!def) return false;
   const tieneRollos = def.item && def.item.rollos && def.item.rollos.length > 0;
   return !!(tieneRollos || opcionesEmpanizadoDe(def.catKey, def.item));
 }
@@ -1563,9 +1637,27 @@ function construirEditorLinea(linea){
   if(!def) return panel;
   const {catKey, cat, item} = def;
 
+  if(item && item.contenidoOpciones){
+    const campo = document.createElement('div');
+    campo.className = 'campo';
+    const lab = document.createElement('label');
+    lab.textContent = '¿Qué lleva? (piezas de cada una)';
+    const lista = document.createElement('div');
+    const mapa = mapaDesdeContenido(linea.contenido);
+    // piezas que ya traía el pedido y ya no están en las opciones actuales se conservan visibles
+    const opciones = [...item.contenidoOpciones, ...Object.keys(mapa).filter(n=> !item.contenidoOpciones.includes(n))];
+    construirFilasContenido(lista, opciones, mapa, ()=>{
+      linea.contenido = contenidoDesdeMapa(mapa);
+      renderEdicionItems();
+    });
+    campo.appendChild(lab);
+    campo.appendChild(lista);
+    panel.appendChild(campo);
+  }
+
   const rollosCombo = item && item.rollos && item.rollos.length ? item.rollos : null;
   if(!lineaPermiteEmpanizado(linea)){
-    // sin selector de empanizado (producto agregado a un pedido ya enviado o de empanizado fijo)
+    // sin selector de empanizado (producto de empanizado fijo o que no lleva)
   } else if(rollosCombo){
     rollosCombo.forEach(rollo=>{
       const actual = linea.empanizadoPorRollo ? linea.empanizadoPorRollo[rollo] : null;
@@ -1629,18 +1721,14 @@ function renderEdicionItems(){
     pedidoEnEdicion.items.forEach((linea, idx)=>{
       const div = document.createElement('div');
       div.className = 'ticket-linea';
-      const metaPartes = [];
-      if(linea.empanizadoPorRollo) metaPartes.push(textoEmpanizadoPorRollo(linea.empanizadoPorRollo));
-      else if(linea.empanizado) metaPartes.push('Empanizado: ' + linea.empanizado);
-      if(linea.salsas && linea.salsas.length) metaPartes.push('Salsas: ' + linea.salsas.join(', '));
-      if(linea.notas) metaPartes.push('Nota: ' + linea.notas);
+      const metaPartes = metaDeLinea(linea);
       const abierta = edicionLineaAbierta === idx;
       const editable = lineaEsEditable(linea);
       div.innerHTML = `
         <div class="top"><span>${linea.cantidad}× ${linea.nombre}</span><span>$${linea.precio*linea.cantidad}</span></div>
         <div class="meta">${metaPartes.join(' · ') || 'Sin personalización'}</div>
         <div class="acciones-linea">
-          ${editable ? `<button class="editar-linea">${abierta ? '▲ Cerrar edición' : (lineaPermiteEmpanizado(linea) ? '✏️ Editar empanizado / salsas' : '✏️ Editar salsas')}</button>` : ''}
+          ${editable ? `<button class="editar-linea">${abierta ? '▲ Cerrar edición' : (lineaPermiteEmpanizado(linea) ? '✏️ Editar empanizado / salsas' : (defDeLinea(linea) && defDeLinea(linea).item && defDeLinea(linea).item.contenidoOpciones ? '✏️ Editar contenido' : '✏️ Editar salsas'))}</button>` : ''}
           <button class="quitar">Quitar</button>
         </div>`;
       const btnEditar = div.querySelector('.editar-linea');
@@ -1678,6 +1766,54 @@ function canonico(v){
   return v;
 }
 
+// ---- resumen de una corrección: qué se agregó, qué se quitó y qué cambió ----
+function firmaLinea(l){
+  const c = Object.assign({}, l);
+  delete c.agregadoEnEdicion;
+  return JSON.stringify(canonico(c));
+}
+function describirLinea(l){
+  const partes = [`${l.cantidad || 1}× ${l.nombre}`];
+  if(l.contenido && l.contenido.length) partes.push('lleva ' + textoContenido(l.contenido));
+  if(l.empanizadoPorRollo) partes.push(textoEmpanizadoPorRollo(l.empanizadoPorRollo));
+  else if(l.empanizado) partes.push(l.empanizado);
+  if(l.salsas && l.salsas.length) partes.push(l.salsas.join(', '));
+  if(l.notas) partes.push('⚠ ' + l.notas);
+  return partes.join(' · ');
+}
+// Lista de {tipo:'agregado'|'quitado'|'cambio'|'otro', ...}. Un "cambio" es un producto del mismo nombre que se quitó y se volvió a poner distinto.
+function resumenCambios(antes, despues){
+  const pend = new Map();
+  (antes.items || []).forEach(l=>{
+    const f = firmaLinea(l);
+    const e = pend.get(f) || {l, n:0};
+    e.n++; pend.set(f, e);
+  });
+  const nuevos = [];
+  (despues.items || []).forEach(l=>{
+    const e = pend.get(firmaLinea(l));
+    if(e && e.n > 0) e.n--; else nuevos.push(l);
+  });
+  const quitados = [];
+  pend.forEach(e=>{ for(let i = 0; i < e.n; i++) quitados.push(e.l); });
+
+  const out = [];
+  nuevos.forEach(n=>{
+    const i = quitados.findIndex(q=> q.nombre === n.nombre && q.categoria === n.categoria);
+    if(i >= 0){
+      const q = quitados.splice(i, 1)[0];
+      out.push({tipo:'cambio', antes:describirLinea(q), despues:describirLinea(n)});
+    } else {
+      out.push({tipo:'agregado', texto:describirLinea(n)});
+    }
+  });
+  quitados.forEach(q=> out.push({tipo:'quitado', texto:describirLinea(q)}));
+  if((antes.cliente || '') !== (despues.cliente || '')) out.push({tipo:'otro', texto:`Cliente: ${antes.cliente} → ${despues.cliente}`});
+  if((antes.envio || 0) !== (despues.envio || 0)) out.push({tipo:'otro', texto:`Envío: $${antes.envio || 0} → $${despues.envio || 0}`});
+  if(!out.length) out.push({tipo:'otro', texto:'Pedido actualizado'});
+  return out;
+}
+
 async function guardarEdicionPedido(){
   if(!pedidoEnEdicion) return;
   const cliente = document.getElementById('editar-cliente').value.trim();
@@ -1691,11 +1827,20 @@ async function guardarEdicionPedido(){
     if(idx === -1){ mostrarAviso('El pedido ya no existe en la nube.', 'error'); return; }
     const firma = o=> JSON.stringify(canonico({cliente:o.cliente, items:o.items || [], envio:o.envio || 0, total:o.total}));
     const hayCambios = firma(estado.pedidos[idx]) !== firma({cliente, items:pedidoEnEdicion.items, envio, total});
-    estado.pedidos[idx].cliente = cliente;
-    estado.pedidos[idx].items = pedidoEnEdicion.items;
-    estado.pedidos[idx].envio = envio;
-    estado.pedidos[idx].total = total;
-    if(hayCambios) estado.pedidos[idx].editadoTs = Date.now();
+    const original = estado.pedidos[idx];
+    const cambios = hayCambios ? resumenCambios(original, {cliente, items:pedidoEnEdicion.items, envio}) : [];
+    original.cliente = cliente;
+    original.items = pedidoEnEdicion.items;
+    original.envio = envio;
+    original.total = total;
+    if(hayCambios){
+      original.editadoTs = Date.now();
+      original.correcciones = (original.correcciones || []).concat([{
+        ts: original.editadoTs,
+        hora: new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'}),
+        cambios
+      }]).slice(-5);
+    }
     await guardarEstadoNube(estado);
 
     // mantener el registro local (usado por el Excel) igual a lo editado
@@ -1861,6 +2006,10 @@ async function refrescarCocina(){
   }
 }
 
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 function pintarCocina(pedidos){
   const cont = document.getElementById('rejilla-cocina');
   cont.innerHTML = '';
@@ -1882,8 +2031,26 @@ function pintarCocina(pedidos){
       }
       (l.salsas || []).forEach(s=> tags.push(`<span class="tag">${s}</span>`));
       if(l.notas) tags.push(`<span class="tag nota">⚠ ${l.notas}</span>`);
-      return `<div class="boleto-item"><div class="cant">${l.cantidad||1}×</div><div class="info"><div class="nombre">${l.nombre||'Producto'}</div><div class="tags">${tags.join('')}</div></div></div>`;
+      if(l.agregadoEnEdicion) tags.unshift('<span class="tag nuevo">NUEVO · corrección</span>');
+      const contenidoHtml = l.contenido && l.contenido.length
+        ? `<div class="contenido">${l.contenido.map(c=> `<div><b>${c.cantidad}×</b> ${esc(c.nombre)}</div>`).join('')}${(l.cantidad || 1) > 1 ? '<small>(cada charola)</small>' : ''}</div>`
+        : '';
+      return `<div class="boleto-item${l.agregadoEnEdicion ? ' es-nuevo' : ''}"><div class="cant">${l.cantidad||1}×</div><div class="info"><div class="nombre">${l.nombre||'Producto'}</div>${contenidoHtml}<div class="tags">${tags.join('')}</div></div></div>`;
     }).join('');
+
+    // qué se corrigió (las últimas correcciones, la más reciente primero)
+    const correcciones = (p.correcciones || []).slice().reverse();
+    const correccionesHtml = correcciones.length ? `<div class="correccion">${correcciones.map((c, i)=>
+      `<div class="correccion-bloque${i > 0 ? ' vieja' : ''}">
+        <div class="correccion-tit">✏️ ${i === 0 ? 'CORRECCIÓN' : 'Corrección anterior'} · ${esc(c.hora || '')}</div>
+        ${(c.cambios || []).map(x=>
+          x.tipo === 'cambio'
+            ? `<div class="cor-linea cambio"><b>CAMBIÓ:</b> <s>${esc(x.antes)}</s><br>➜ ${esc(x.despues)}</div>`
+            : x.tipo === 'agregado' ? `<div class="cor-linea agregado"><b>➕ AGREGAR:</b> ${esc(x.texto)}</div>`
+            : x.tipo === 'quitado' ? `<div class="cor-linea quitado"><b>➖ QUITAR:</b> ${esc(x.texto)}</div>`
+            : `<div class="cor-linea otro">${esc(x.texto)}</div>`
+        ).join('')}
+      </div>`).join('')}</div>` : '';
 
     const siguienteEstado = {pendiente:'preparando', preparando:'listo', listo:'entregado'}[p.estado];
     const textoBtn = {pendiente:'Empezar', preparando:'Marcar listo', listo:'Entregar'}[p.estado];
@@ -1898,6 +2065,7 @@ function pintarCocina(pedidos){
             <div class="boleto-hora">${p.hora}<br>$${p.total}</div>
           </div>
         </div>
+        ${correccionesHtml}
         ${itemsHtml}
         <div class="boleto-foot"></div>
       </div>`;
@@ -1988,7 +2156,7 @@ function exportarExcel(offsetDias){
       filas.push({
         PERSONA: idx === 0 ? pedido.cliente : '',
         HORA: idx === 0 ? pedido.hora : '',
-        PRODUCTO: item ? `${item.cantidad > 1 ? item.cantidad+'x ' : ''}${item.nombre}` : '',
+        PRODUCTO: item ? `${item.cantidad > 1 ? item.cantidad+'x ' : ''}${item.nombre}${item.contenido && item.contenido.length ? ' (' + textoContenido(item.contenido) + ')' : ''}` : '',
         EMPANIZADO: item ? (item.empanizadoPorRollo ? textoEmpanizadoPorRollo(item.empanizadoPorRollo) : (item.empanizado || '')) : '',
         PRECIO: item ? Number((item.precio*item.cantidad).toFixed(2)) : '',
         BEBIDA: idx === 0 ? bebidaTexto : ''
