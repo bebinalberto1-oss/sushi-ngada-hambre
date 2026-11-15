@@ -139,13 +139,12 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .item-card p{color:var(--muted);font-size:12.5px;margin:6px 0 12px;line-height:1.45;min-height:34px;}
 .item-card button{width:100%;padding:8px;border-radius:7px;background:var(--bg-alt);color:var(--cream);border:1px solid var(--line);font-size:13px;font-weight:600;}
 .item-card button:hover{background:var(--blue);color:#08131c;border-color:var(--blue);}
-.fila-contenido{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);}
-.fila-contenido:last-child{border-bottom:none;}
-.fila-contenido .nom{font-size:14px;color:var(--cream);flex:1;}
-.fila-contenido .nom.con{font-weight:800;color:var(--amber);}
-.fila-contenido .paso{display:flex;align-items:center;gap:8px;flex:none;}
-.fila-contenido .paso button{width:32px;height:32px;border-radius:8px;background:var(--bg-alt);border:1px solid var(--line);color:var(--cream);font-size:17px;cursor:pointer;}
-.fila-contenido .paso span{font-family:'Space Mono',monospace;font-size:16px;min-width:22px;text-align:center;color:var(--cream);}
+.lleva-lista{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+.lleva-lista span{font-size:13px;font-weight:600;color:var(--amber);background:var(--bg-alt);border:1px solid var(--line);border-radius:8px;padding:5px 10px;}
+.nota-pedido{margin:4px 0 14px;border:2px solid var(--blue);border-radius:10px;background:rgba(63,169,245,.10);padding:10px 12px;}
+.nota-pedido small{display:block;font-size:11px;font-weight:800;letter-spacing:.6px;color:var(--blue);margin-bottom:4px;}
+.nota-pedido div{font-size:19px;font-weight:700;line-height:1.3;color:var(--cream);}
+.boleto-item .nota-item{margin-top:6px;font-size:17px;font-weight:700;line-height:1.3;color:var(--amber);}
 .item-card.fuera{opacity:.55;}
 .item-card.fuera button,.item-card.fuera button:hover{background:var(--bg-alt);color:var(--muted);border-color:var(--line);cursor:not-allowed;}
 
@@ -211,8 +210,7 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
 .boleto-item.es-nuevo .cant{border-color:var(--amber);}
 .boleto-item .contenido{margin-top:8px;display:flex;flex-direction:column;gap:4px;}
 .boleto-item .contenido div{font-family:'Anton',sans-serif;font-size:24px;line-height:1.15;color:var(--cream);letter-spacing:.3px;}
-.boleto-item .contenido div b{color:var(--amber);font-size:28px;margin-right:2px;}
-.boleto-item .contenido small{font-size:11px;color:var(--muted);}
+.boleto-item .contenido div:before{content:'• ';color:var(--amber);}
 .tag.nuevo{color:#08131c;background:var(--amber);border-color:var(--amber);font-weight:800;}
 .correccion{margin:4px 0 14px;border:2px solid var(--amber);border-radius:10px;background:rgba(224,165,48,.08);padding:10px 12px;}
 .correccion-bloque + .correccion-bloque{margin-top:10px;padding-top:10px;border-top:1px dashed var(--amber);}
@@ -460,6 +458,10 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
           <label>Nombre del cliente</label>
           <input type="text" id="input-cliente" placeholder="Ej. Mesa 4 / Vianey">
         </div>
+        <div class="campo">
+          <label>Nota adicional del pedido (opcional)</label>
+          <textarea id="input-nota-pedido" placeholder="Ej. sin cubiertos, entregar en la puerta, cambiar un ingrediente…"></textarea>
+        </div>
         <div id="ticket-lineas"><div class="vacio-msg">Agrega productos del menú →</div></div>
 
         <div class="campo">
@@ -531,8 +533,8 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
     <div id="bloque-empanizados-combo" class="oculto"></div>
 
     <div id="bloque-contenido" class="oculto">
-      <div class="campo"><label>¿Qué lleva? (indica cuántas piezas de cada una)</label></div>
-      <div id="lista-contenido"></div>
+      <div class="campo"><label>Esta charola lleva (según el menú)</label></div>
+      <div id="lista-contenido" class="lleva-lista"></div>
     </div>
 
     <div id="bloque-salsas">
@@ -570,6 +572,11 @@ body.alerta-flash{animation:parpadeoAlerta .4s ease-in-out 2;}
     <div class="campo">
       <label>Nombre del cliente</label>
       <input type="text" id="editar-cliente">
+    </div>
+
+    <div class="campo">
+      <label>Nota adicional del pedido</label>
+      <textarea id="editar-nota" placeholder="Opcional"></textarea>
     </div>
 
     <div id="editar-items-lista"></div>
@@ -762,9 +769,9 @@ const MENU = {
     titulo:'Charolas', empanizable:false, salsasMax:0,
     items:[
       {id:'h1', nombre:'Charola chica', precio:450, desc:"Mini bola Areli, Angela's, Vianey's, dedos Flamin, dedos coco y dedos normal.", empanizados:EMPANIZADOS_CHAROLAS,
-        contenidoOpciones:["Angela's","Vianey's",'Mini bola Areli','Dedos Flamin','Dedos coco','Dedos normal']},
+        lleva:["Mini bola Areli","Angela's","Vianey's",'Dedos Flamin','Dedos coco','Dedos normal']},
       {id:'h2', nombre:'Charola grande', precio:600, desc:"Angela's, Vianey's, Bebin Roll, mini bola Areli, dedos Flamin, dedos coco y dedos de surimi.", empanizados:EMPANIZADOS_CHAROLAS,
-        contenidoOpciones:["Angela's","Vianey's",'Bebin Roll','Mini bola Areli','Dedos Flamin','Dedos coco','Dedos de surimi']},
+        lleva:["Angela's","Vianey's",'Bebin Roll','Mini bola Areli','Dedos Flamin','Dedos coco','Dedos de surimi']},
     ]
   },
   bebidas: {
@@ -1175,7 +1182,7 @@ function abrirModalItem(categoriaKey, item){
   const permiteEmpanizado = !!opcionesEmp;
   const empanizable = permiteEmpanizado && !tieneRollosCombo;
   const pedirEmpanizadoPorRollo = tieneRollosCombo;
-  itemEnEdicion = {categoriaKey, item, salsasMax, empanizado: item.empanizadoFijo || (empanizable ? 'Normal' : null), empanizadoPorRollo: null, salsas: [], contenido: {}, notas:'', cantidad:1};
+  itemEnEdicion = {categoriaKey, item, salsasMax, empanizado: item.empanizadoFijo || (empanizable ? 'Normal' : null), empanizadoPorRollo: null, salsas: [], notas:'', cantidad:1};
 
   document.getElementById('modal-item-nombre').textContent = item.nombre;
   document.getElementById('modal-item-desc').textContent = item.desc;
@@ -1231,10 +1238,8 @@ function abrirModalItem(categoriaKey, item){
   }
 
   const bloqueContenido = document.getElementById('bloque-contenido');
-  bloqueContenido.classList.toggle('oculto', !item.contenidoOpciones);
-  if(item.contenidoOpciones){
-    construirFilasContenido(document.getElementById('lista-contenido'), item.contenidoOpciones, itemEnEdicion.contenido, ()=>{});
-  }
+  bloqueContenido.classList.toggle('oculto', !item.lleva);
+  document.getElementById('lista-contenido').innerHTML = item.lleva ? item.lleva.map(n=> `<span>${esc(n)}</span>`).join('') : '';
 
   const bloqueSalsas = document.getElementById('bloque-salsas');
   bloqueSalsas.classList.toggle('oculto', salsasMax === 0);
@@ -1281,35 +1286,12 @@ function cerrarModalItem(){
     document.getElementById('overlay-editar-pedido').classList.remove('oculto');
   }
 }
-// Contenido de una charola: mapa {nombre: piezas} <-> lista [{nombre, cantidad}] <-> texto "2× Angela's, 1× Vianey's"
-function contenidoDesdeMapa(mapa){
-  return Object.entries(mapa).filter(([, n])=> n > 0).map(([nombre, cantidad])=> ({nombre, cantidad}));
-}
-function mapaDesdeContenido(lista){
-  const m = {};
-  (lista || []).forEach(x=>{ m[x.nombre] = x.cantidad; });
-  return m;
-}
-function textoContenido(lista){
-  return (lista || []).map(x=> `${x.cantidad}× ${x.nombre}`).join(', ');
-}
-function construirFilasContenido(cont, opciones, mapa, alCambiar){
-  cont.innerHTML = '';
-  opciones.forEach(nombre=>{
-    const n = mapa[nombre] || 0;
-    const fila = document.createElement('div');
-    fila.className = 'fila-contenido';
-    fila.innerHTML = `<div class="nom${n > 0 ? ' con' : ''}">${nombre}</div>
-      <div class="paso"><button class="menos">−</button><span>${n}</span><button class="mas">+</button></div>`;
-    const cambiar = d=>{
-      mapa[nombre] = Math.max(0, (mapa[nombre] || 0) + d);
-      alCambiar();
-      construirFilasContenido(cont, opciones, mapa, alCambiar);
-    };
-    fila.querySelector('.menos').onclick = ()=> cambiar(-1);
-    fila.querySelector('.mas').onclick = ()=> cambiar(1);
-    cont.appendChild(fila);
-  });
+// Lo que lleva una charola sale del menú. Se guarda en la línea como "incluye"; los pedidos anteriores lo toman del menú.
+function incluyeDeLinea(l){
+  if(Array.isArray(l.incluye) && l.incluye.length) return l.incluye;
+  if(Array.isArray(l.contenido) && l.contenido.length) return l.contenido.map(c=> `${c.cantidad}× ${c.nombre}`);   // versión anterior
+  const def = defDeLinea(l);
+  return def && def.item && def.item.lleva ? def.item.lleva : [];
 }
 
 function confirmarAgregarItem(){
@@ -1327,11 +1309,7 @@ function confirmarAgregarItem(){
     notas: itemEnEdicion.notas,
     cantidad: itemEnEdicion.cantidad
   };
-  if(itemEnEdicion.item.contenidoOpciones){
-    const contenido = contenidoDesdeMapa(itemEnEdicion.contenido);
-    if(!contenido.length){ mostrarAviso('Indica qué lleva (cuántas piezas de cada una).', 'error'); return; }
-    nuevoItem.contenido = contenido;
-  }
+  if(itemEnEdicion.item.lleva) nuevoItem.incluye = [...itemEnEdicion.item.lleva];
   if(modoEdicionPedido && pedidoEnEdicion){
     nuevoItem.agregadoEnEdicion = true;   // producto agregado a un pedido ya enviado (cocina lo marca como NUEVO)
     pedidoEnEdicion.items.push(nuevoItem);
@@ -1404,7 +1382,8 @@ function reiniciarEnvio(){
 // Partes de descripción de una línea del pedido (ticket y edición)
 function metaDeLinea(linea){
   const m = [];
-  if(linea.contenido && linea.contenido.length) m.push('Lleva: ' + textoContenido(linea.contenido));
+  const incluye = incluyeDeLinea(linea);
+  if(incluye.length) m.push('Lleva: ' + incluye.join(', '));
   if(linea.empanizadoPorRollo) m.push(textoEmpanizadoPorRollo(linea.empanizadoPorRollo));
   else if(linea.empanizado) m.push('Empanizado: ' + linea.empanizado);
   if(linea.salsas && linea.salsas.length) m.push('Salsas: ' + linea.salsas.join(', '));
@@ -1412,10 +1391,10 @@ function metaDeLinea(linea){
   return m;
 }
 function textoItemsLocal(items){
-  return items.map(l=> `${l.cantidad}x ${l.nombre}${l.contenido && l.contenido.length?' {'+textoContenido(l.contenido)+'}':''}${l.empanizadoPorRollo?' ('+textoEmpanizadoPorRollo(l.empanizadoPorRollo)+')':(l.empanizado?' ('+l.empanizado+')':'')}${l.salsas && l.salsas.length?' ['+l.salsas.join('/')+']':''}${l.notas?' - '+l.notas:''}`).join(' | ');
+  return items.map(l=> `${l.cantidad}x ${l.nombre}${l.empanizadoPorRollo?' ('+textoEmpanizadoPorRollo(l.empanizadoPorRollo)+')':(l.empanizado?' ('+l.empanizado+')':'')}${l.salsas && l.salsas.length?' ['+l.salsas.join('/')+']':''}${l.notas?' - '+l.notas:''}`).join(' | ');
 }
 function itemsParaLocal(items){
-  return items.map(l=> ({nombre:l.nombre, categoria:l.categoria, empanizado:l.empanizado, empanizadoPorRollo:l.empanizadoPorRollo, contenido:l.contenido, precio:l.precio, cantidad:l.cantidad}));
+  return items.map(l=> ({nombre:l.nombre, categoria:l.categoria, empanizado:l.empanizado, empanizadoPorRollo:l.empanizadoPorRollo, precio:l.precio, cantidad:l.cantidad}));
 }
 
 async function enviarComanda(){
@@ -1445,6 +1424,8 @@ async function enviarComanda(){
       total,
       estado: 'pendiente'
     };
+    const notaPedido = document.getElementById('input-nota-pedido').value.trim();
+    if(notaPedido) pedido.nota = notaPedido;
     estado.pedidos = estado.pedidos || [];
     estado.pedidos.push(pedido);
     await guardarEstadoNube(estado);
@@ -1463,6 +1444,7 @@ async function enviarComanda(){
     carrito = [];
     reiniciarEnvio();
     document.getElementById('input-cliente').value = '';
+    document.getElementById('input-nota-pedido').value = '';
     renderTicket();
     refrescarHistorial();
     pitarConfirmacionEnvio();
@@ -1578,6 +1560,7 @@ async function abrirEditarPedido(idPedido){
     if(typeof pedidoEnEdicion.envio !== 'number') pedidoEnEdicion.envio = 0;
     document.getElementById('editar-folio-txt').textContent = `Folio ${p.id} · ${p.hora}`;
     document.getElementById('editar-cliente').value = p.cliente;
+    document.getElementById('editar-nota').value = p.nota || '';
     document.getElementById('editar-envio').value = pedidoEnEdicion.envio || '';
     poblarSelectAgregarEdicion();
     edicionLineaAbierta = null;
@@ -1601,7 +1584,7 @@ function defDeLinea(linea){
 function lineaEsEditable(linea){
   const def = defDeLinea(linea);
   if(!def) return false;
-  return lineaPermiteEmpanizado(linea) || salsasMaxDe(def.cat, def.item) > 0 || !!(def.item && def.item.contenidoOpciones);
+  return lineaPermiteEmpanizado(linea) || salsasMaxDe(def.cat, def.item) > 0;
 }
 
 function lineaPermiteEmpanizado(linea){
@@ -1636,24 +1619,6 @@ function construirEditorLinea(linea){
   const def = defDeLinea(linea);
   if(!def) return panel;
   const {catKey, cat, item} = def;
-
-  if(item && item.contenidoOpciones){
-    const campo = document.createElement('div');
-    campo.className = 'campo';
-    const lab = document.createElement('label');
-    lab.textContent = '¿Qué lleva? (piezas de cada una)';
-    const lista = document.createElement('div');
-    const mapa = mapaDesdeContenido(linea.contenido);
-    // piezas que ya traía el pedido y ya no están en las opciones actuales se conservan visibles
-    const opciones = [...item.contenidoOpciones, ...Object.keys(mapa).filter(n=> !item.contenidoOpciones.includes(n))];
-    construirFilasContenido(lista, opciones, mapa, ()=>{
-      linea.contenido = contenidoDesdeMapa(mapa);
-      renderEdicionItems();
-    });
-    campo.appendChild(lab);
-    campo.appendChild(lista);
-    panel.appendChild(campo);
-  }
 
   const rollosCombo = item && item.rollos && item.rollos.length ? item.rollos : null;
   if(!lineaPermiteEmpanizado(linea)){
@@ -1728,7 +1693,7 @@ function renderEdicionItems(){
         <div class="top"><span>${linea.cantidad}× ${linea.nombre}</span><span>$${linea.precio*linea.cantidad}</span></div>
         <div class="meta">${metaPartes.join(' · ') || 'Sin personalización'}</div>
         <div class="acciones-linea">
-          ${editable ? `<button class="editar-linea">${abierta ? '▲ Cerrar edición' : (lineaPermiteEmpanizado(linea) ? '✏️ Editar empanizado / salsas' : (defDeLinea(linea) && defDeLinea(linea).item && defDeLinea(linea).item.contenidoOpciones ? '✏️ Editar contenido' : '✏️ Editar salsas'))}</button>` : ''}
+          ${editable ? `<button class="editar-linea">${abierta ? '▲ Cerrar edición' : (lineaPermiteEmpanizado(linea) ? '✏️ Editar empanizado / salsas' : '✏️ Editar salsas')}</button>` : ''}
           <button class="quitar">Quitar</button>
         </div>`;
       const btnEditar = div.querySelector('.editar-linea');
@@ -1774,7 +1739,6 @@ function firmaLinea(l){
 }
 function describirLinea(l){
   const partes = [`${l.cantidad || 1}× ${l.nombre}`];
-  if(l.contenido && l.contenido.length) partes.push('lleva ' + textoContenido(l.contenido));
   if(l.empanizadoPorRollo) partes.push(textoEmpanizadoPorRollo(l.empanizadoPorRollo));
   else if(l.empanizado) partes.push(l.empanizado);
   if(l.salsas && l.salsas.length) partes.push(l.salsas.join(', '));
@@ -1810,6 +1774,7 @@ function resumenCambios(antes, despues){
   quitados.forEach(q=> out.push({tipo:'quitado', texto:describirLinea(q)}));
   if((antes.cliente || '') !== (despues.cliente || '')) out.push({tipo:'otro', texto:`Cliente: ${antes.cliente} → ${despues.cliente}`});
   if((antes.envio || 0) !== (despues.envio || 0)) out.push({tipo:'otro', texto:`Envío: $${antes.envio || 0} → $${despues.envio || 0}`});
+  if((antes.nota || '') !== (despues.nota || '')) out.push({tipo:'otro', texto: despues.nota ? `Nota adicional: ${despues.nota}` : 'Se quitó la nota adicional'});
   if(!out.length) out.push({tipo:'otro', texto:'Pedido actualizado'});
   return out;
 }
@@ -1819,20 +1784,22 @@ async function guardarEdicionPedido(){
   const cliente = document.getElementById('editar-cliente').value.trim();
   if(!cliente){ mostrarAviso('Escribe el nombre del cliente.', 'error'); return; }
   const envio = Number(document.getElementById('editar-envio').value) || 0;
+  const nota = document.getElementById('editar-nota').value.trim();
   const subtotal = pedidoEnEdicion.items.reduce((s,l)=> s + l.precio*l.cantidad, 0);
   const total = subtotal + envio;
   try{
     const estado = await leerEstadoNube();
     const idx = (estado.pedidos || []).findIndex(x=> x.id === pedidoEnEdicion.id);
     if(idx === -1){ mostrarAviso('El pedido ya no existe en la nube.', 'error'); return; }
-    const firma = o=> JSON.stringify(canonico({cliente:o.cliente, items:o.items || [], envio:o.envio || 0, total:o.total}));
-    const hayCambios = firma(estado.pedidos[idx]) !== firma({cliente, items:pedidoEnEdicion.items, envio, total});
+    const firma = o=> JSON.stringify(canonico({cliente:o.cliente, items:o.items || [], envio:o.envio || 0, total:o.total, nota:o.nota || ''}));
+    const hayCambios = firma(estado.pedidos[idx]) !== firma({cliente, items:pedidoEnEdicion.items, envio, total, nota});
     const original = estado.pedidos[idx];
-    const cambios = hayCambios ? resumenCambios(original, {cliente, items:pedidoEnEdicion.items, envio}) : [];
+    const cambios = hayCambios ? resumenCambios(original, {cliente, items:pedidoEnEdicion.items, envio, nota}) : [];
     original.cliente = cliente;
     original.items = pedidoEnEdicion.items;
     original.envio = envio;
     original.total = total;
+    if(nota) original.nota = nota; else delete original.nota;
     if(hayCambios){
       original.editadoTs = Date.now();
       original.correcciones = (original.correcciones || []).concat([{
@@ -2030,12 +1997,11 @@ function pintarCocina(pedidos){
         tags.push(`<span class="tag ${l.empanizado==='Flamin Hot'?'picante':''}">${l.empanizado}</span>`);
       }
       (l.salsas || []).forEach(s=> tags.push(`<span class="tag">${s}</span>`));
-      if(l.notas) tags.push(`<span class="tag nota">⚠ ${l.notas}</span>`);
       if(l.agregadoEnEdicion) tags.unshift('<span class="tag nuevo">NUEVO · corrección</span>');
-      const contenidoHtml = l.contenido && l.contenido.length
-        ? `<div class="contenido">${l.contenido.map(c=> `<div><b>${c.cantidad}×</b> ${esc(c.nombre)}</div>`).join('')}${(l.cantidad || 1) > 1 ? '<small>(cada charola)</small>' : ''}</div>`
-        : '';
-      return `<div class="boleto-item${l.agregadoEnEdicion ? ' es-nuevo' : ''}"><div class="cant">${l.cantidad||1}×</div><div class="info"><div class="nombre">${l.nombre||'Producto'}</div>${contenidoHtml}<div class="tags">${tags.join('')}</div></div></div>`;
+      const incluye = incluyeDeLinea(l);
+      const contenidoHtml = incluye.length ? `<div class="contenido">${incluye.map(n=> `<div>${esc(n)}</div>`).join('')}</div>` : '';
+      const notaHtml = l.notas ? `<div class="nota-item">⚠ ${esc(l.notas)}</div>` : '';
+      return `<div class="boleto-item${l.agregadoEnEdicion ? ' es-nuevo' : ''}"><div class="cant">${l.cantidad||1}×</div><div class="info"><div class="nombre">${l.nombre||'Producto'}</div>${contenidoHtml}<div class="tags">${tags.join('')}</div>${notaHtml}</div></div>`;
     }).join('');
 
     // qué se corrigió (las últimas correcciones, la más reciente primero)
@@ -2065,6 +2031,7 @@ function pintarCocina(pedidos){
             <div class="boleto-hora">${p.hora}<br>$${p.total}</div>
           </div>
         </div>
+        ${p.nota ? `<div class="nota-pedido"><small>📝 NOTA ADICIONAL</small><div>${esc(p.nota)}</div></div>` : ''}
         ${correccionesHtml}
         ${itemsHtml}
         <div class="boleto-foot"></div>
@@ -2156,7 +2123,7 @@ function exportarExcel(offsetDias){
       filas.push({
         PERSONA: idx === 0 ? pedido.cliente : '',
         HORA: idx === 0 ? pedido.hora : '',
-        PRODUCTO: item ? `${item.cantidad > 1 ? item.cantidad+'x ' : ''}${item.nombre}${item.contenido && item.contenido.length ? ' (' + textoContenido(item.contenido) + ')' : ''}` : '',
+        PRODUCTO: item ? `${item.cantidad > 1 ? item.cantidad+'x ' : ''}${item.nombre}` : '',
         EMPANIZADO: item ? (item.empanizadoPorRollo ? textoEmpanizadoPorRollo(item.empanizadoPorRollo) : (item.empanizado || '')) : '',
         PRECIO: item ? Number((item.precio*item.cantidad).toFixed(2)) : '',
         BEBIDA: idx === 0 ? bebidaTexto : ''
